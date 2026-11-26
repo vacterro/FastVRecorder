@@ -1,0 +1,44 @@
+{
+  "clauses": {
+    "SRC-009:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "FastVRecorder SAIHANDOFF-3 MODE 2 final reliability audit: P0 publish manifest path containment, P0/P1 safe package update transaction, P1 deferred finalization liveness, P1 recovery output identity, P1 settings load/backup recovery, P1 MP3+History reconciliation, P2 profiling, P2 real runtime acceptance, P2 docs/publication reconcile"
+    },
+    "SRC-009:R002": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P0/P1 safe package update transaction: full preflight, package completeness, unowned/user-modified collision detection, refuse uninspectable running targets, single-writer lock, staging ownership proof, preserve the previous valid generation, durable journal, rollback, interrupted-publication recovery, atomic manifest replacement, no permanent updater service"
+    },
+    "SRC-009:R003": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P1 deferred finalization liveness: unify stopped-session completion, keep writer ownership, one authoritative outcome, preserve partial data, no indefinite blockage after the writer exits, accurate History/UI state, no replayed success cue or duplicate terminal events, explicit exit-while-pending handling"
+    },
+    "SRC-009:R004": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P1 recovery output identity and marker trust: markers/metadata advisory, canonical source/output identity, verify integrity and content, bind receipts to the source session payload, never adopt an unrelated same-length WAV, preserve the original part, rebuild damaged/missing/unrelated output, serialize recovery, no junction traversal"
+    },
+    "SRC-009:R005": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P1 settings load and backup recovery: explicit Missing/Readable/Malformed/AccessDenied/SharingViolation outcomes, never treat transient unreadability as corruption, do not authorize primary replacement until its state is known, never overwrite the last valid backup with a damaged primary, handle a valid primary appearing after load, preserve hotkeys and folder, permit reload"
+    },
+    "SRC-009:R006": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P1 MP3 and History reconciliation: every surviving audio file discoverable, WAV deletion only after verified replacement, explicit partial success, visible History persistence failures, no recording depends on History alone, audit RefreshExistence/Snapshot sharing"
+    },
+    "SRC-009:R007": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P2 performance profiling: measure startup, memory, CPU, handles/threads and latency honestly; prefer lazy/bounded work; preserve hotkey and finalization latency; report actual before/after numbers"
+    }
+  },
+  "derived_at": "2026-11-26T10:28:23Z",
+  "derived_from": "SRC-009",
+  "interpretation_revision": 7,
+  "schema_version": 1,
+  "source_sha256": "70d3abb40e104e241a236bb27590eff33462c42b8f620851f34cac672d2e573f"
+}

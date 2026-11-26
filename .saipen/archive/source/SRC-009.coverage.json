@@ -1,0 +1,113 @@
+{
+  "requirements": {
+    "SRC-009:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "FastVRecorder SAIHANDOFF-3 MODE 2 final reliability audit: P0 publish manifest path containment, P0/P1 safe package update transaction, P1 deferred finalization liveness, P1 recovery output identity, P1 settings load/backup recovery, P1 MP3+History reconciliation, P2 profiling, P2 real runtime acceptance, P2 docs/publication reconcile",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R002": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P0/P1 safe package update transaction: full preflight, package completeness, unowned/user-modified collision detection, refuse uninspectable running targets, single-writer lock, staging ownership proof, preserve the previous valid generation, durable journal, rollback, interrupted-publication recovery, atomic manifest replacement, no permanent updater service",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R003": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P1 deferred finalization liveness: unify stopped-session completion, keep writer ownership, one authoritative outcome, preserve partial data, no indefinite blockage after the writer exits, accurate History/UI state, no replayed success cue or duplicate terminal events, explicit exit-while-pending handling",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R004": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P1 recovery output identity and marker trust: markers/metadata advisory, canonical source/output identity, verify integrity and content, bind receipts to the source session payload, never adopt an unrelated same-length WAV, preserve the original part, rebuild damaged/missing/unrelated output, serialize recovery, no junction traversal",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R005": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P1 settings load and backup recovery: explicit Missing/Readable/Malformed/AccessDenied/SharingViolation outcomes, never treat transient unreadability as corruption, do not authorize primary replacement until its state is known, never overwrite the last valid backup with a damaged primary, handle a valid primary appearing after load, preserve hotkeys and folder, permit reload",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R006": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P1 MP3 and History reconciliation: every surviving audio file discoverable, WAV deletion only after verified replacement, explicit partial success, visible History persistence failures, no recording depends on History alone, audit RefreshExistence/Snapshot sharing",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R007": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "P2 performance profiling: measure startup, memory, CPU, handles/threads and latency honestly; prefer lazy/bounded work; preserve hotkey and finalization latency; report actual before/after numbers",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R008": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "NOT_APPLICABLE",
+      "evidence": "E-173: this host exposes no capture endpoint (Core Audio error 0x80070490, microphone list = 1 default placeholder); real hardware acceptance is explicitly NOT VERIFIED, not claimed as a pass",
+      "text": "P2 real runtime and hardware acceptance on the current release, including real capture endpoints and physical recording",
+      "verification": null,
+      "work": "T-12"
+    },
+    "SRC-009:R009": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-176",
+      "text": "P2 documentation and publication reconciliation: accurate version/changelog/test counts/acceptance/limitations, verify screenshots, reconcile HEAD/origin/tags/artifact hashes/SAIPEN state, no fabricated publication state, no public GitHub Release without authorization",
+      "verification": "git push origin main: 9b28fdf pushed (origin main matches); annotated tag v0.0.4 pushed and peels to 9b28fdf; release artifact SHA256 5C54590B68FC4CDB08C3547368ECA03FFE856F06BD4E5C2D1C04D2DD60210BEA; no public GitHub Release created",
+      "work": "T-12"
+    },
+    "SRC-009:R010": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "Test strategy: preserve fast feedback, add focused deterministic regressions, keep hardware/stress separate, run focused RED/GREEN, integration, publish-safety and full suites, never use real recordings as destructive fixtures",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R011": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "Execute the described waves A-E autonomously without repetitive operator checkpoints, fix newly discovered substantive issues and retest, do not create artificial work",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    },
+    "SRC-009:R012": {
+      "actionable": true,
+      "class": "acceptance-criterion",
+      "disposition": "VERIFIED",
+      "evidence": "E-173",
+      "text": "Definition of done: no manifest escape, no reparse redirection, unknown user data preserved, recoverable publication, safe writer ownership, no stranded deferred session, verified recovery identity, settings locks cannot replace newer settings, MP3 failure preserves audio, History failures recoverable, fast feedback, honest performance, hardware acceptance verified where available, no known critical defects, current package verified, docs accurate, publication states reconciled or explicitly bounded",
+      "verification": "dotnet test FastVRecorder.sln -c Release: exit 0, 141/141 passed (97 Core + 44 Integration); publish-safety 139/139 passed",
+      "work": "T-12"
+    }
+  },
+  "schema_version": 1
+}

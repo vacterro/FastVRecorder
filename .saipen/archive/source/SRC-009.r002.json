@@ -1,0 +1,19 @@
+{
+  "clauses": {
+    "SRC-009:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "FastVRecorder SAIHANDOFF-3 MODE 2 final reliability audit: P0 publish manifest path containment, P0/P1 safe package update transaction, P1 deferred finalization liveness, P1 recovery output identity, P1 settings load/backup recovery, P1 MP3+History reconciliation, P2 profiling, P2 real runtime acceptance, P2 docs/publication reconcile"
+    },
+    "SRC-009:R002": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "P0/P1 safe package update transaction: full preflight, package completeness, unowned/user-modified collision detection, refuse uninspectable running targets, single-writer lock, staging ownership proof, preserve the previous valid generation, durable journal, rollback, interrupted-publication recovery, atomic manifest replacement, no permanent updater service"
+    }
+  },
+  "derived_at": "2026-11-26T10:27:53Z",
+  "derived_from": "SRC-009",
+  "interpretation_revision": 2,
+  "schema_version": 1,
+  "source_sha256": "70d3abb40e104e241a236bb27590eff33462c42b8f620851f34cac672d2e573f"
+}
