@@ -304,7 +304,15 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        ShellService.OpenFile(latest.Path);
+        try
+        {
+            ShellService.OpenFile(latest.Path);
+            _log.Info("Opening last recording in the default player: " + latest.Path);
+        }
+        catch (Exception ex)
+        {
+            ShowBanner(_loc["Hist.PlayFailed"] + ex.Message, "error");
+        }
     }
 
     public void ShowHideWindow() => ShowHideRequested?.Invoke();

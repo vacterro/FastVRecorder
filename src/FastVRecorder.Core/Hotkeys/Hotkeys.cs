@@ -181,7 +181,7 @@ public static class HotkeyDefaults
         new HotkeyBinding(HotkeyAction.PauseResume, default, HotkeyScope.Global),
         new HotkeyBinding(HotkeyAction.ShowHideWindow, default, HotkeyScope.Global),
         new HotkeyBinding(HotkeyAction.OpenRecordingFolder, default, HotkeyScope.Global),
-        new HotkeyBinding(HotkeyAction.OpenLastRecording, default, HotkeyScope.Global),
+        new HotkeyBinding(HotkeyAction.OpenLastRecording, new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x4C), HotkeyScope.Global),
         new HotkeyBinding(HotkeyAction.ToggleAlwaysOnTop, default, HotkeyScope.Local),
     };
 

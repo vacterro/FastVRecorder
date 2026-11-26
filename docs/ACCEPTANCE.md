@@ -134,7 +134,7 @@ section 16. All requirements in the captured body are covered below.
 | `Alt + 0` toggles recording; main-row 0, Numpad 0 separate | Done | `HotkeyDefaults`, parse/serialize tests |
 | Native `RegisterHotKey`, `MOD_NOREPEAT`, no polling/hook/admin | Done | `GlobalHotkeyService` |
 | Works in other apps, minimized/hidden, fullscreen where Windows allows | Done (manual) | message-only window registration; log `Global hotkeys applied`; environment has no microphone but registration succeeds |
-| Eight actions with the stated defaults; only Toggle assigned | Done | `HotkeyDefaults.All` |
+| Eight actions; Toggle `Alt+0`, Open Last `Ctrl+Alt+L`, others unassigned | Done | `HotkeyDefaults.All`, schema v2 migration test |
 | Editor: title, combination, scope, click-assign, clear, reset, conflict | Done | Keys page |
 | Ctrl/Alt/Shift/Win/F-keys/letters/digits/Numpad/specials; Esc cancels | Done | `HotkeyGesture`, `PreviewKeyDown` capture |
 | Reject reserved combos, accidental recording while editing, duplicates, double local/global handling, losing the old working hotkey | Done | validator + transactional `Apply` + `Suspend` release; tested rules |
@@ -242,7 +242,7 @@ section 16. All requirements in the captured body are covered below.
 | Item | Evidence |
 |---|---|
 | Solution builds in Release | `dotnet build FastVRecorder.sln -c Release` — success |
-| Automated tests | 78 core + 24 integration = **102 passed**, 0 failed |
+| Automated tests | 79 core + 24 integration = **103 passed**, 0 failed |
 | Portable publish | `scripts/Publish.ps1` → `dist/FastVRecorder` with self-contained `FastVRecorder.exe` |
 | UI smoke | live windows captured: Recorder, History, Hotkeys, Settings (all sections), Golden Default, Vintage Dark, English, Russian, System Default microphone, 35 % notification volume |
 | UI languages | 33 language packs (`LanguageTests`), native-name selector, Arabic RTL, portable overrides; 31 are machine-translated with English fallback |

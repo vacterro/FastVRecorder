@@ -140,7 +140,7 @@ public sealed class HotkeySetting
 
 public sealed class AppSettings
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public RecordingSettings Recording { get; set; } = new();
@@ -393,12 +393,19 @@ public sealed class SettingsStore
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
-    /// <summary>Schema migrations. v0 (missing) -> v1: nothing to transform, defaults fill gaps.</summary>
+    /// <summary>
+    /// Schema migrations. v0/v1 -> v2 assigns the new default "open and play last recording"
+    /// shortcut when the legacy document left it unassigned.
+    /// </summary>
     private static void Migrate(AppSettings s)
     {
-        if (s.SchemaVersion > AppSettings.CurrentSchemaVersion)
+        if (s.SchemaVersion < 2 && s.Hotkeys is not null)
         {
-            // Newer file: keep known fields, do not downgrade data we do not understand.
+            var entry = s.Hotkeys.FirstOrDefault(h => h is not null && h.Action == HotkeyAction.OpenLastRecording);
+            if (entry is not null && string.IsNullOrWhiteSpace(entry.Gesture))
+            {
+                entry.Gesture = new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x4C).Serialize();
+            }
         }
     }
 

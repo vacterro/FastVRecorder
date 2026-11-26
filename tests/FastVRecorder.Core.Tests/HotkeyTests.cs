@@ -92,6 +92,7 @@ public sealed class HotkeyTests
         Assert.Equal(Enum.GetValues<HotkeyAction>().Length, HotkeyDefaults.All.Count);
         Assert.Equal(HotkeyDefaults.All.Count, HotkeyDefaults.All.Select(b => b.Action).Distinct().Count());
         Assert.Equal("Alt+0", HotkeyDefaults.For(HotkeyAction.ToggleRecording).Gesture.Serialize());
+        Assert.Equal("Ctrl+Alt+L", HotkeyDefaults.For(HotkeyAction.OpenLastRecording).Gesture.Serialize());
         Assert.True(HotkeyDefaults.For(HotkeyAction.StartRecording).Gesture.IsEmpty);
     }
 }

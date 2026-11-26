@@ -10,6 +10,26 @@ public sealed class SettingsStoreTests : TempDirectoryTest
     private string SettingsPath => Path.Combine(Root, "config", "settings.json");
 
     [Fact]
+    public void LegacySettings_GainTheOpenLastRecordingHotkey()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        File.WriteAllText(SettingsPath, """
+            {
+              "schemaVersion": 1,
+              "hotkeys": [
+                { "action": "OpenLastRecording", "gesture": "", "scope": "Global" }
+              ]
+            }
+            """);
+
+        var loaded = new SettingsStore(SettingsPath).Load();
+        var entry = loaded.Hotkeys.Single(h => h.Action == HotkeyAction.OpenLastRecording);
+
+        Assert.Equal(AppSettings.CurrentSchemaVersion, loaded.SchemaVersion);
+        Assert.Equal("Ctrl+Alt+L", entry.Gesture);
+    }
+
+    [Fact]
     public void SaveAndLoad_RoundTripsValues()
     {
         var store = new SettingsStore(SettingsPath);
@@ -127,8 +147,9 @@ public sealed class SettingsStoreTests : TempDirectoryTest
         Assert.Equal(10, settings.Advanced.RecoveryFlushSeconds);
         Assert.Equal(50, settings.Advanced.LowDiskSpaceMb);
         Assert.Equal(Enum.GetValues<HotkeyAction>().Length, settings.Hotkeys.Count);
-        Assert.Single(settings.Hotkeys, h => !string.IsNullOrEmpty(h.Gesture));
-        Assert.Equal("Alt+0", settings.Hotkeys.Single(h => !string.IsNullOrEmpty(h.Gesture)).Gesture);
+        Assert.Equal(2, settings.Hotkeys.Count(h => !string.IsNullOrEmpty(h.Gesture)));
+        Assert.Contains(settings.Hotkeys, h => h.Gesture == "Alt+0");
+        Assert.Contains(settings.Hotkeys, h => h.Gesture == "Ctrl+Alt+L");
     }
 
     [Fact]

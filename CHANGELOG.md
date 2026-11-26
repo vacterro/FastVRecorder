@@ -31,13 +31,15 @@ Initial autonomous build.
 - Persistent History with playback, open/reveal/copy, inline rename, and Recycle Bin deletion.
 - Native `RegisterHotKey` + `MOD_NOREPEAT` hotkeys with a transactional editor for eight actions,
   global/local scopes, reserved-combination checks, and capture-safe suspension.
+- Default `Ctrl+Alt+L` opens and plays the last recording in the Windows default player
+  (schema v2 migration assigns it to existing settings).
 - Tray icon with idle/recording/paused/error variants and a full context menu.
 - Original start/done/error cues with 35 % default volume, per-event toggles and previews;
   missing assets never block recording.
 - Wintage Golden Default theme and all original Wintage theme files; live theme switching and
   English/Russian runtime language switching.
 - Multi-resolution application icon and tray derivatives from the original `media/favicon.png`.
-- 102 xUnit tests covering core behaviour and end-to-end recording/recovery with a fake device.
+- 103 xUnit tests covering core behaviour and end-to-end recording/recovery with a fake device.
 - Build, test, publish, and clean scripts; README, architecture, acceptance matrix, roadmap.
 
 ### Fixed
