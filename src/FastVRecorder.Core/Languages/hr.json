@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Preimenovanje nije uspjelo: ",
     "Msg.Mp3FailedWavKept": "MP3 kodiranje nije uspjelo; WAV datoteka je zadržana.",
     "Msg.NothingToOpen": "Još nema snimke za otvaranje.",
-    "Msg.RecordingIncomplete": "Spremljeno, ali snimka možda nije potpuna: "
+    "Msg.RecordingIncomplete": "Spremljeno, ali snimka možda nije potpuna: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

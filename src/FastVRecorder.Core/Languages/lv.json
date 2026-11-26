@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Neizdevās pārdēvēt: ",
     "Msg.Mp3FailedWavKept": "MP3 kodēšana neizdevās; WAV fails tika saglabāts.",
     "Msg.NothingToOpen": "Vēl nav atvērta ieraksta.",
-    "Msg.RecordingIncomplete": "Saglabāts, taču ieraksts var būt nepilnīgs: "
+    "Msg.RecordingIncomplete": "Saglabāts, taču ieraksts var būt nepilnīgs: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

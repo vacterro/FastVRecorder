@@ -59,21 +59,51 @@ public static class Mp3Encoder
         }
     }
 
-    /// <summary>Encodes a finished WAV. Returns false and keeps the source on any failure.</summary>
+    /// <summary>
+    /// Encodes a finished WAV through an owned temporary file, validates that the result is
+    /// decodable and its duration is plausible, then publishes it without overwriting. The source
+    /// WAV is never touched here; the caller keeps it until it has committed the result.
+    /// </summary>
     public static bool TryEncode(string wavPath, string mp3Path, int bitrateKbps, ILog log, out string? error)
     {
+        var temporary = mp3Path + ".tmp-" + Guid.NewGuid().ToString("N") + ".mp3";
         try
         {
             MediaFoundationApi.Startup();
-            using var reader = new WaveFileReader(wavPath);
-            MediaFoundationEncoder.EncodeToMp3(reader, mp3Path, Math.Clamp(bitrateKbps, 32, 320) * 1000);
-            var info = new FileInfo(mp3Path);
-            if (!info.Exists || info.Length < 128)
+            using var source = new WaveFileReader(wavPath);
+            MediaFoundationEncoder.EncodeToMp3(source, temporary, Math.Clamp(bitrateKbps, 32, 320) * 1000);
+
+            var info = new FileInfo(temporary);
+            if (!info.Exists || info.Length < 512)
             {
                 error = "The MP3 encoder produced no usable data.";
                 return false;
             }
 
+            using (var check = new MediaFoundationReader(temporary))
+            {
+                if (check.TotalTime <= TimeSpan.Zero)
+                {
+                    error = "The MP3 output has no decodable duration.";
+                    return false;
+                }
+
+                var sourceDuration = source.TotalTime;
+                var tolerance = TimeSpan.FromSeconds(Math.Max(2.0, sourceDuration.TotalSeconds * 0.1));
+                if (Math.Abs((check.TotalTime - sourceDuration).TotalSeconds) > tolerance.TotalSeconds)
+                {
+                    error = $"The MP3 duration {check.TotalTime} is not plausible for a {sourceDuration} source.";
+                    return false;
+                }
+            }
+
+            if (File.Exists(mp3Path))
+            {
+                error = "The MP3 destination already exists; refusing to overwrite it.";
+                return false;
+            }
+
+            File.Move(temporary, mp3Path, overwrite: false);
             error = null;
             return true;
         }
@@ -81,8 +111,12 @@ public static class Mp3Encoder
         {
             log.Error($"MP3 encoding failed for {Path.GetFileName(wavPath)}", ex);
             error = ex.Message;
-            TryDelete(mp3Path);
+            TryDelete(temporary);
             return false;
+        }
+        finally
+        {
+            TryDelete(temporary);
         }
     }
 

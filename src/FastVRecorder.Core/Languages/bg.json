@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Неуспешно преименуване: ",
     "Msg.Mp3FailedWavKept": "MP3 кодирането е неуспешно; WAV файлът беше запазен.",
     "Msg.NothingToOpen": "Все още няма запис за отваряне.",
-    "Msg.RecordingIncomplete": "Запазено, но записът може да е непълен: "
+    "Msg.RecordingIncomplete": "Запазено, но записът може да е непълен: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

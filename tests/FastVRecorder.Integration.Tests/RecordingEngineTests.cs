@@ -72,6 +72,8 @@ public sealed class RecordingEngineTests : TempDirectoryTest
         var files = Directory.GetFiles(harness.Folder, "*.wav");
         Assert.Single(files);
         Assert.Equal(files[0], eventArgs.FilePath);
+        Assert.Equal(RecordingOutcome.Success, eventArgs.Outcome);
+        Assert.False(string.IsNullOrEmpty(eventArgs.SessionId));
         var dataBytes = new FileInfo(files[0]).Length - WavHeader.HeaderLength(TargetFormat.Standard);
         Assert.True(dataBytes > 0);
         Assert.True(WavVerifier.Verify(files[0], TargetFormat.Standard, dataBytes, out var error), error);
@@ -243,6 +245,102 @@ public sealed class RecordingEngineTests : TempDirectoryTest
         Assert.True(new FileInfo(mp3[0]).Length > 256);
         Assert.Empty(Directory.GetFiles(harness.Folder, "*.wav"));
         Assert.Equal("MP3", harness.History.Snapshot().Single().Format);
+    }
+
+    [Fact]
+    public async Task StorageFailure_ReportsPartialSavedAndKeepsTheWav()
+    {
+        var factory = new FakeCaptureFactory(Source);
+        var harness = CreateHarness(factory);
+        using var engine = harness.Engine;
+        var completed = new TaskCompletionSource<RecordingCompletedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Completed += (_, e) => completed.TrySetResult(e);
+
+        Assert.True(await engine.StartAsync());
+        await WaitUntil(() => engine.Elapsed >= TimeSpan.FromMilliseconds(150));
+        factory.Last!.Fail(new IOException("device disconnected during recording"));
+
+        var result = await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(RecordingOutcome.PartialSaved, result.Outcome);
+        Assert.False(string.IsNullOrWhiteSpace(result.Note));
+        Assert.True(File.Exists(result.FilePath));
+        Assert.Empty(Directory.GetFiles(harness.Folder, "*.wav.part"));
+        Assert.Equal(RecordingState.Idle, engine.State);
+    }
+
+    [Fact]
+    public async Task StopWithoutAudio_ReportsCancelledNoAudioAndNoFile()
+    {
+        var factory = new FakeCaptureFactory(Source, emitData: false);
+        var harness = CreateHarness(factory);
+        using var engine = harness.Engine;
+        var failed = new TaskCompletionSource<RecordingErrorEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Error += (_, e) => failed.TrySetResult(e);
+
+        Assert.True(await engine.StartAsync());
+        await engine.StopAsync();
+
+        var result = await failed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(RecordingOutcome.CancelledNoAudio, result.Outcome);
+        Assert.Empty(Directory.GetFiles(harness.Folder, "*.wav"));
+        Assert.Equal(RecordingState.Idle, engine.State);
+    }
+
+    [Fact]
+    public async Task WriterTimeout_DoesNotFinalizeOrAllowANewSessionUntilItExits()
+    {
+        var factory = new FakeCaptureFactory(Source);
+        var harness = CreateHarness(factory);
+        using var engine = harness.Engine;
+        engine.WriterJoinTimeout = TimeSpan.FromMilliseconds(200);
+        using var release = new ManualResetEventSlim(false);
+        engine.WriterLoopHook = () => release.Wait();
+        var completed = false;
+        var failed = new TaskCompletionSource<RecordingErrorEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Completed += (_, _) => completed = true;
+        engine.Error += (_, e) => failed.TrySetResult(e);
+
+        Assert.True(await engine.StartAsync());
+        await Task.Delay(100);
+        await engine.StopAsync();
+
+        Assert.Equal(RecordingState.Error, engine.State);
+        Assert.False(completed);
+        var failure = await failed.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(RecordingOutcome.FailedRecoverable, failure.Outcome);
+        Assert.Single(Directory.GetFiles(harness.Folder, "*.wav.part"));
+        Assert.False(await engine.StartAsync());
+
+        release.Set();
+        await WaitUntil(() => engine.State == RecordingState.Idle);
+        Assert.Single(Directory.GetFiles(harness.Folder, "*.wav"));
+        Assert.Empty(Directory.GetFiles(harness.Folder, "*.wav.part"));
+        Assert.False(completed);
+    }
+
+    [Fact]
+    public async Task RapidSessions_HaveUniqueIdsAndSuccessOutcome()
+    {
+        var harness = CreateHarness();
+        using var engine = harness.Engine;
+        var ids = new List<string>();
+
+        for (var i = 0; i < 3; i++)
+        {
+            var completed = new TaskCompletionSource<RecordingCompletedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+            EventHandler<RecordingCompletedEventArgs> handler = (_, e) => completed.TrySetResult(e);
+            engine.Completed += handler;
+            Assert.True(await engine.StartAsync());
+            await WaitUntil(() => engine.Elapsed >= TimeSpan.FromMilliseconds(80));
+            await engine.StopAsync();
+            var result = await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            engine.Completed -= handler;
+            Assert.Equal(RecordingOutcome.Success, result.Outcome);
+            ids.Add(result.SessionId);
+        }
+
+        Assert.Equal(3, ids.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(3, Directory.GetFiles(harness.Folder, "*.wav").Length);
     }
 
     private static async Task WaitUntil(Func<bool> condition, int timeoutMilliseconds = 5000)

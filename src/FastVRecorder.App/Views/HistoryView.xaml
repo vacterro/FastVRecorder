@@ -83,6 +83,10 @@
                     Command="{Binding BeginRenameCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
             <Button Content="{Binding [Hist.Delete], Source={x:Static local:Loc.Instance}}"
                     Command="{Binding DeleteRequestCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.RetryRecovery], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding DataContext.RetryRecoveryCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.Rescan], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding DataContext.RescanHistoryCommand, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
         </WrapPanel>
 
         <StackPanel Grid.Row="2" Margin="0,2,0,0" Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}">

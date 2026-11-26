@@ -1,19 +1,24 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+Import-Module (Join-Path $PSScriptRoot 'PublishSafety.psm1') -Force
+
 Push-Location $root
 try {
     foreach ($folder in @('src', 'tests')) {
         $path = Join-Path $root $folder
         if (-not (Test-Path $path)) { continue }
-        Get-ChildItem $path -Directory -Recurse |
+        $buildDirs = @(Get-ChildItem $path -Directory -Recurse |
             Where-Object { $_.Name -in @('bin', 'obj') } |
-            Remove-Item -Recurse -Force
+            Sort-Object { $_.FullName.Length } -Descending)
+        foreach ($directory in $buildDirs) {
+            if (Test-ReparsePoint $directory.FullName) { continue }
+            Remove-Item -LiteralPath $directory.FullName -Recurse -Force
+        }
     }
 
-    $dist = Join-Path $root 'dist'
-    if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
-
-    Write-Host 'Build output and dist/ removed.' -ForegroundColor Green
+    $removed = Remove-OwnedStaging -RepoRoot $root
+    Write-Host "Build output removed. Owned staging directories removed: $removed." -ForegroundColor Green
+    Write-Host 'dist/FastVRecorder and every portable runtime/config/recording directory were left untouched.'
 }
 finally {
     Pop-Location

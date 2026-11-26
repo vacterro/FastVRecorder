@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Rename failed: ",
     "Msg.Mp3FailedWavKept": "MP3 encoding failed; the WAV file was kept.",
     "Msg.NothingToOpen": "No recording to open yet.",
-    "Msg.RecordingIncomplete": "Saved, but the recording may be incomplete: "
+    "Msg.RecordingIncomplete": "Saved, but the recording may be incomplete: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

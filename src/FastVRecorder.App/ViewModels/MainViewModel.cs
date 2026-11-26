@@ -15,6 +15,7 @@ using FastVRecorder.Infrastructure.Recovery;
 using FastVRecorder.Infrastructure.Recording;
 using FastVRecorder.Infrastructure.Shell;
 using FastVRecorder.Infrastructure.Startup;
+using NAudio.Wave;
 
 namespace FastVRecorder.App.ViewModels;
 
@@ -37,9 +38,7 @@ public sealed class MainViewModel : ObservableObject
     private string _bannerText = string.Empty;
     private string _bannerSeverity = "info";
     private DateTime _bannerUntil;
-    private DateTime? _pendingDoneCue;
-    private bool _errorDuringSession;
-    private bool _sessionStarted;
+    private string? _activeSessionId;
     private int _tickCount;
 
     public MainViewModel(
@@ -90,6 +89,8 @@ public sealed class MainViewModel : ObservableObject
         ShowHotkeysCommand = new RelayCommand(() => ShowPage(UiPage.Hotkeys));
         ShowSettingsCommand = new RelayCommand(() => ShowPage(UiPage.Settings));
         DismissBannerCommand = new RelayCommand(() => { BannerText = string.Empty; });
+        RetryRecoveryCommand = new RelayCommand(RetryRecovery);
+        RescanHistoryCommand = new RelayCommand(RescanHistory);
 
         _engine.StateChanged += (_, e) => Dispatch(() => OnStateChanged(e));
         _engine.Started += (_, e) => Dispatch(() => OnRecordingStarted(e));
@@ -132,8 +133,15 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ShowHotkeysCommand { get; }
     public RelayCommand ShowSettingsCommand { get; }
     public RelayCommand DismissBannerCommand { get; }
+    public RelayCommand RetryRecoveryCommand { get; }
+    public RelayCommand RescanHistoryCommand { get; }
 
     public event Action? ShowHideRequested;
+
+    /// <summary>Set by the composition root to run one recovery scan on demand.</summary>
+    public Func<RecoveryReport>? RecoveryRetry { get; set; }
+
+    private bool _recoveryRetryBusy;
 
     /// <summary>Provided by the window so the tray menu can say Show or Hide.</summary>
     public Func<bool>? IsWindowVisible { get; set; }
@@ -217,6 +225,102 @@ public sealed class MainViewModel : ObservableObject
         if (page == UiPage.Settings) Settings.RefreshDevices();
     }
 
+    private async void RescanHistory()
+    {
+        try
+        {
+            var folder = Settings.FolderDisplay;
+            var known = _history.Snapshot().Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var discovered = await Task.Run(() => DiscoverRecordings(folder, known));
+            var added = _history.AddRange(discovered);
+            History.Refresh();
+            ShowBanner(_loc["Hist.RescanDone"] + " " + added, "info");
+        }
+        catch (Exception ex)
+        {
+            ShowBanner(_loc["Hist.RescanFailed"] + " " + ex.Message, "error");
+        }
+    }
+
+    private static List<HistoryEntry> DiscoverRecordings(string root, HashSet<string> known)
+    {
+        var result = new List<HistoryEntry>();
+        if (!Directory.Exists(root)) return result;
+        var queue = new Queue<(string Path, int Depth)>();
+        queue.Enqueue((root, 0));
+        var skipped = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "config", "media", "themes", "languages", "docs", "bin", "obj" };
+        while (queue.Count > 0 && result.Count < 2000)
+        {
+            var (folder, depth) = queue.Dequeue();
+            IEnumerable<string> files;
+            try { files = Directory.EnumerateFiles(folder, "*.wav"); }
+            catch { continue; }
+            foreach (var file in files.Concat(SafeEnumerate(folder, "*.mp3")))
+            {
+                if (result.Count >= 2000) break;
+                if (known.Contains(file)) continue;
+                try
+                {
+                    double duration = 0;
+                    try { using var reader = new AudioFileReader(file); duration = reader.TotalTime.TotalSeconds; }
+                    catch { }
+                    result.Add(new HistoryEntry
+                    {
+                        Path = file,
+                        CreatedLocal = File.GetLastWriteTime(file),
+                        DurationSeconds = duration,
+                        SizeBytes = new FileInfo(file).Length,
+                        Format = Path.GetExtension(file).TrimStart('.').ToUpperInvariant(),
+                        Note = "Indexed by folder rescan.",
+                    });
+                    known.Add(file);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            }
+
+            if (depth < 4)
+            {
+                try
+                {
+                    foreach (var sub in Directory.EnumerateDirectories(folder))
+                    {
+                        var name = Path.GetFileName(sub);
+                        if (!skipped.Contains(name)) queue.Enqueue((sub, depth + 1));
+                    }
+                }
+                catch { }
+            }
+        }
+
+        return result;
+    }
+
+    private static IEnumerable<string> SafeEnumerate(string folder, string pattern)
+    {
+        try { return Directory.EnumerateFiles(folder, pattern).ToList(); }
+        catch { return Array.Empty<string>(); }
+    }
+
+    private async void RetryRecovery()
+    {
+        if (_recoveryRetryBusy || RecoveryRetry is null) return;
+        _recoveryRetryBusy = true;
+        try
+        {
+            ShowBanner(_loc["Status.Recovering"], "info");
+            var report = await Task.Run(RecoveryRetry);
+            ReportRecovery(report);
+        }
+        catch (Exception ex)
+        {
+            ShowBanner(_loc["Msg.RecoveryFailed"] + ex.Message, "error");
+        }
+        finally
+        {
+            _recoveryRetryBusy = false;
+        }
+    }
+
     public void ShowWarning(string message) => ShowBanner(message, "warning");
 
     public void ShowError(string message) => ShowBanner(message, "error");
@@ -290,7 +394,7 @@ public sealed class MainViewModel : ObservableObject
 
     public void OpenLast()
     {
-        var latest = _history.Latest();
+        var latest = _history.LatestExisting();
         if (latest is null)
         {
             ShowBanner(_loc["Msg.NothingToOpen"], "info");
@@ -397,15 +501,6 @@ public sealed class MainViewModel : ObservableObject
     {
         Recorder.Tick();
 
-        if (_pendingDoneCue is { } due && DateTime.UtcNow >= due)
-        {
-            _pendingDoneCue = null;
-            if (!_errorDuringSession && _settings.Notifications.SoundsEnabled && _settings.Notifications.PlayDone)
-            {
-                _cues.Play(CuePlayer.DoneCue, EffectiveVolume(_settings.Notifications.DoneVolume), _settings.Notifications.OutputDevice);
-            }
-        }
-
         if (_bannerUntil != default && DateTime.UtcNow > _bannerUntil)
         {
             _bannerUntil = default;
@@ -420,7 +515,6 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnStateChanged(StateChangedEventArgs e)
     {
-        if (e.NewState == RecordingState.Starting) _sessionStarted = false;
         if (e.NewState is RecordingState.Starting or RecordingState.Recording or RecordingState.Paused)
         {
             Settings.StopMicTest();
@@ -439,9 +533,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnRecordingStarted(RecordingStartedEventArgs e)
     {
-        _errorDuringSession = false;
-        _sessionStarted = true;
-        _pendingDoneCue = null;
+        _activeSessionId = e.SessionId;
         Recorder.OnStarted();
         History.StopPlayback();
         if (_settings.Notifications.SoundsEnabled && _settings.Notifications.PlayStart)
@@ -454,20 +546,33 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnRecordingCompleted(RecordingCompletedEventArgs e)
     {
+        if (!string.IsNullOrEmpty(_activeSessionId) && !string.Equals(e.SessionId, _activeSessionId, StringComparison.Ordinal))
+        {
+            return; // stale event from an older session
+        }
+
         Recorder.OnCompleted(e);
         History.Refresh();
+        var success = e.Outcome == RecordingOutcome.Success;
         if (!string.IsNullOrWhiteSpace(e.Note))
         {
-            ShowBanner(_loc["Msg.RecordingIncomplete"] + e.Note, "warning");
+            ShowBanner(_loc["Msg.RecordingIncomplete"] + e.Note, success ? "success" : "warning");
         }
         else
         {
             ShowBanner(_loc["Msg.SavedTo"] + e.FilePath, "success");
         }
 
-        if (_settings.Notifications.SoundsEnabled && _settings.Notifications.PlayDone)
+        if (success)
         {
-            _pendingDoneCue = DateTime.UtcNow.AddMilliseconds(280);
+            if (_settings.Notifications.SoundsEnabled && _settings.Notifications.PlayDone)
+            {
+                _cues.Play(CuePlayer.DoneCue, EffectiveVolume(_settings.Notifications.DoneVolume), _settings.Notifications.OutputDevice);
+            }
+        }
+        else if (_settings.Notifications.SoundsEnabled && _settings.Notifications.PlayError)
+        {
+            _cues.Play(CuePlayer.ErrorCue, EffectiveVolume(_settings.Notifications.ErrorVolume), _settings.Notifications.OutputDevice);
         }
 
         if (_settings.Notifications.WindowsNotification)
@@ -475,7 +580,7 @@ public sealed class MainViewModel : ObservableObject
             _tray.ShowBalloon(_loc["App.Title"], Path.GetFileName(e.FilePath));
         }
 
-        if (_settings.Files.OpenFolderAfterSave)
+        if (success && _settings.Files.OpenFolderAfterSave)
         {
             try
             {
@@ -487,6 +592,7 @@ public sealed class MainViewModel : ObservableObject
             }
         }
 
+        _activeSessionId = null;
         ToggleRecordingCommand.RaiseCanExecuteChanged();
         PauseCommand.RaiseCanExecuteChanged();
         UpdateTray(rebuildMenu: true);
@@ -494,19 +600,33 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnEngineError(RecordingErrorEventArgs e)
     {
-        if (!_errorDuringSession)
+        if (!string.IsNullOrEmpty(_activeSessionId) && !string.IsNullOrEmpty(e.SessionId) &&
+            !string.Equals(e.SessionId, _activeSessionId, StringComparison.Ordinal))
         {
-            _errorDuringSession = true;
+            return; // stale failure from an older session
+        }
+
+        var cancelled = e.Outcome == RecordingOutcome.CancelledNoAudio;
+        var message = string.IsNullOrWhiteSpace(e.Message) ? _loc["Msg.NoAudio"] : e.Message;
+        if (cancelled)
+        {
+            ShowBanner(_loc["Msg.NoAudio"], "info");
+        }
+        else
+        {
+            var prefix = _activeSessionId is null ? _loc["Msg.StartFailed"] : _loc["Msg.RecordFailed"];
+            ShowBanner(prefix + message, "error");
             if (_settings.Notifications.SoundsEnabled && _settings.Notifications.PlayError)
             {
                 _cues.Play(CuePlayer.ErrorCue, EffectiveVolume(_settings.Notifications.ErrorVolume), _settings.Notifications.OutputDevice);
             }
+            if (_settings.Notifications.WindowsNotification)
+            {
+                _tray.ShowBalloon(_loc["App.Title"], message);
+            }
         }
 
-        _pendingDoneCue = null;
-        var message = string.IsNullOrWhiteSpace(e.Message) ? _loc["Msg.NoAudio"] : e.Message;
-        var prefix = _sessionStarted ? _loc["Msg.RecordFailed"] : _loc["Msg.StartFailed"];
-        ShowBanner(prefix + message, "error");
+        _activeSessionId = null;
         Recorder.RefreshState();
         if (e.IsFatal && _engine.State == RecordingState.Idle)
         {

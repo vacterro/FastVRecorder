@@ -244,6 +244,20 @@ public static class HotkeyValidator
         return null;
     }
 
+    /// <summary>
+    /// Ctrl+Alt is AltGr on several international layouts; letters/digits may stop typing
+    /// characters. This is a warning, not a hard rejection.
+    /// </summary>
+    public static bool IsAltGrRisk(HotkeyGesture gesture)
+    {
+        if (gesture.IsEmpty) return false;
+        var required = HotkeyModifiers.Control | HotkeyModifiers.Alt;
+        if ((gesture.Modifiers & required) != required) return false;
+        if (gesture.Modifiers.HasFlag(HotkeyModifiers.Win)) return false;
+        var vk = gesture.VirtualKey;
+        return vk is >= 0x30 and <= 0x39 or >= 0x41 and <= 0x5A;
+    }
+
     /// <summary>Finds another action already using the gesture (any scope).</summary>
     public static HotkeyAction? FindDuplicate(IEnumerable<HotkeyBinding> bindings, HotkeyAction self, HotkeyGesture g)
     {

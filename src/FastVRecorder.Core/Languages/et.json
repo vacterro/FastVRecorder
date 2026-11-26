@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Ümbernimetamine ebaõnnestus: ",
     "Msg.Mp3FailedWavKept": "MP3 kodeerimine ebaõnnestus; WAV-faili säilitati.",
     "Msg.NothingToOpen": "Salvestist pole veel avada.",
-    "Msg.RecordingIncomplete": "Salvestatud, kuid salvestus võib olla poolik: "
+    "Msg.RecordingIncomplete": "Salvestatud, kuid salvestus võib olla poolik: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt on mõnel klaviatuuriasetusel AltGr; see võib takistada tähtede sisestamist. Vajadusel määra muu kombinatsioon.",
+    "Hist.Rescan": "Skanni kaust uuesti",
+    "Hist.RescanDone": "Lisatud salvestusi:",
+    "Hist.RescanFailed": "Kausta skannimine ebaõnnestus:"
   }
 }

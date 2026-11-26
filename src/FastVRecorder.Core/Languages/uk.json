@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Не вдалося перейменувати: ",
     "Msg.Mp3FailedWavKept": "Помилка кодування MP3; файл WAV було збережено.",
     "Msg.NothingToOpen": "Ще немає запису для відкриття.",
-    "Msg.RecordingIncomplete": "Збережено, але запис може бути неповним: "
+    "Msg.RecordingIncomplete": "Збережено, але запис може бути неповним: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

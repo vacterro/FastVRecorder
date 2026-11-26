@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "No s'ha pogut canviar el nom: ",
     "Msg.Mp3FailedWavKept": "La codificació MP3 ha fallat; el fitxer WAV es va mantenir.",
     "Msg.NothingToOpen": "Encara no hi ha cap gravació per obrir.",
-    "Msg.RecordingIncomplete": "S'ha desat, però la gravació pot estar incompleta: "
+    "Msg.RecordingIncomplete": "S'ha desat, però la gravació pot estar incompleta: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

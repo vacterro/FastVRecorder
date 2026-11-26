@@ -129,7 +129,23 @@ public static class LanguagePacks
                 if (pack is null) continue;
                 lock (Sync)
                 {
-                    _packs![pack.Code] = pack;
+                    if (_packs!.TryGetValue(pack.Code, out var embedded))
+                    {
+                        // Portable overrides are partial by design: they replace keys, not the
+                        // entire pack, so new embedded keys keep working after an app update.
+                        var merged = new Dictionary<string, string>(embedded.Strings, StringComparer.Ordinal);
+                        foreach (var (key, value) in pack.Strings) merged[key] = value;
+                        _packs[pack.Code] = new LanguagePack
+                        {
+                            Code = pack.Code,
+                            Strings = merged,
+                            Source = pack.Source,
+                        };
+                    }
+                    else
+                    {
+                        _packs[pack.Code] = pack;
+                    }
                 }
 
                 applied++;

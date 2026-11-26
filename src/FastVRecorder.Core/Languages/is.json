@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Endurnefna mistókst: ",
     "Msg.Mp3FailedWavKept": "MP3 kóðun mistókst; WAV skránni var haldið.",
     "Msg.NothingToOpen": "Engin upptaka til að opna ennþá.",
-    "Msg.RecordingIncomplete": "Vistað en upptakan gæti verið ófullgerð: "
+    "Msg.RecordingIncomplete": "Vistað en upptakan gæti verið ófullgerð: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

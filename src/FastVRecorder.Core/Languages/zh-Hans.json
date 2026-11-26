@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "重命名失败： ",
     "Msg.Mp3FailedWavKept": "MP3编码失败； WAV 文件被保留。",
     "Msg.NothingToOpen": "尚无可打开的录音。",
-    "Msg.RecordingIncomplete": "已保存，但录制可能不完整： "
+    "Msg.RecordingIncomplete": "已保存，但录制可能不完整： ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

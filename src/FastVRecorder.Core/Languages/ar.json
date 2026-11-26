@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "فشلت إعادة التسمية: ",
     "Msg.Mp3FailedWavKept": "فشل ترميز MP3؛ تم الاحتفاظ بملف WAV.",
     "Msg.NothingToOpen": "لا يوجد تسجيل لفتحه بعد.",
-    "Msg.RecordingIncomplete": "تم الحفظ، ولكن قد يكون التسجيل غير مكتمل: "
+    "Msg.RecordingIncomplete": "تم الحفظ، ولكن قد يكون التسجيل غير مكتمل: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

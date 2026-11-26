@@ -2,6 +2,40 @@
 
 All notable changes to FastVRecorder are recorded here.
 
+## 0.0.2 — 2026-11-26
+
+Data-safety and reliability hardening.
+
+### Fixed
+- Publishing and clean scripts no longer remove the portable runtime directory. Publishing
+  builds in an isolated staging folder, validates the package, replaces only owned application
+  artifacts, and preserves `config/`, recordings, journals, partial files, custom themes,
+  language overrides, cues and unknown user files. Unsafe, reparse-point, source-tree and
+  non-runtime targets are refused; a failed build leaves the last package untouched.
+- Writer ownership: a stop that times out no longer finalizes concurrently. The session stays
+  blocked with a truthful error until the writer exits, then finalizes under the engine gate.
+- Recovery no longer deletes zero-byte files referenced by metadata, writes through an owned
+  temporary path, adopts verified output after a crash, tolerates short stream reads, keeps
+  journal entries for disconnected volumes, distinguishes transient from permanent failures,
+  and exposes a retry action.
+- Recording outcomes are an explicit contract (`Success`, `PartialSaved`, `FailedRecoverable`,
+  `FailedNoOutput`, `CancelledNoAudio`); `done.wav` is played only for complete success,
+  `error.wav` for partial/failed, and stale session events are ignored.
+- MP3 is encoded through a temporary file, validated with Media Foundation for duration and
+  decodability, published without overwrite, and the WAV is kept on any failure.
+- History saves are serialized with their write; latest-existing selection skips missing files
+  and uses file time; a bounded folder rescan indexes existing recordings without deleting data.
+- Hotkey editor warns when Ctrl+Alt is AltGr on international layouts.
+
+### Tests
+- Publish-safety script covers 42 protected-file/target scenarios with SHA-256 checks.
+- 123 xUnit tests (87 Core + 36 Integration), including writer timeout, partial outcomes,
+  recovery transaction/idempotency, MP3 validation and audio-signal fidelity.
+
+### Release
+- Self-contained win-x64 package with documentation and screenshots, no `config/`, recordings,
+  logs or recovery artifacts; SHA-256 checksums and a clean-extraction recording test.
+
 ## 0.0.1 — 2026-11-26
 
 Initial autonomous build.

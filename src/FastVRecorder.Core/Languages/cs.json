@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Přejmenování se nezdařilo: ",
     "Msg.Mp3FailedWavKept": "Kódování MP3 se nezdařilo; soubor WAV byl zachován.",
     "Msg.NothingToOpen": "Zatím není možné otevřít záznam.",
-    "Msg.RecordingIncomplete": "Uloženo, ale záznam může být neúplný: "
+    "Msg.RecordingIncomplete": "Uloženo, ale záznam může být neúplný: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

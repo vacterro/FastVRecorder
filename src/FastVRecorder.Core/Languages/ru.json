@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Ошибка переименования: ",
     "Msg.Mp3FailedWavKept": "Не удалось закодировать MP3; файл WAV сохранён.",
     "Msg.NothingToOpen": "Пока нет записи для открытия.",
-    "Msg.RecordingIncomplete": "Сохранено, но запись может быть неполной: "
+    "Msg.RecordingIncomplete": "Сохранено, но запись может быть неполной: ",
+    "Hist.RetryRecovery": "Повторить восстановление",
+    "Keys.AltGrWarning": "Ctrl+Alt на некоторых раскладках — это AltGr; это может блокировать ввод. При необходимости выберите другую комбинацию.",
+    "Hist.Rescan": "Пересканировать папку",
+    "Hist.RescanDone": "Добавлено записей:",
+    "Hist.RescanFailed": "Ошибка сканирования папки:"
   }
 }

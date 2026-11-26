@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Rinomina non riuscita: ",
     "Msg.Mp3FailedWavKept": "Codifica MP3 non riuscita; il file WAV è stato conservato.",
     "Msg.NothingToOpen": "Nessuna registrazione ancora da aprire.",
-    "Msg.RecordingIncomplete": "Salvato, ma la registrazione potrebbe essere incompleta: "
+    "Msg.RecordingIncomplete": "Salvato, ma la registrazione potrebbe essere incompleta: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

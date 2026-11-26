@@ -1,23 +1,34 @@
 param(
     [string]$Runtime = 'win-x64',
     [string]$Output = 'dist\FastVRecorder',
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$KeepStaging
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+Import-Module (Join-Path $PSScriptRoot 'PublishSafety.psm1') -Force
+
 Push-Location $root
+$staging = $null
 try {
+    $target = Resolve-PublishTarget -Output $Output -RepoRoot $root
+    Assert-SafeTarget -Target $target -RepoRoot $root | Out-Null
+    Assert-RuntimeNotRunning -Target $target
+
     if (-not $SkipTests) {
         Write-Host 'Running the test suite before publishing...' -ForegroundColor Cyan
         dotnet test FastVRecorder.sln -c Release --nologo
         if ($LASTEXITCODE -ne 0) { throw "Tests failed with exit code $LASTEXITCODE." }
     }
 
-    $target = Join-Path $root $Output
-    if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+    Remove-OwnedStaging -RepoRoot $root | Out-Null
+    $stagingRoot = Join-Path $root 'dist\.staging'
+    New-Item -ItemType Directory -Path $stagingRoot -Force | Out-Null
+    $staging = Join-Path $stagingRoot ('publish-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+    New-Item -ItemType Directory -Path $staging -Force | Out-Null
 
-    Write-Host "Publishing self-contained portable build to $Output..." -ForegroundColor Cyan
+    Write-Host "Publishing to isolated staging: $staging" -ForegroundColor Cyan
     dotnet publish src\FastVRecorder.App\FastVRecorder.App.csproj `
         -c Release `
         -r $Runtime `
@@ -26,21 +37,61 @@ try {
         -p:PublishTrimmed=false `
         -p:DebugType=None `
         -p:DebugSymbols=false `
-        -o $target
+        -o $staging
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
-    # Portable overrides: ship the original Wintage themes next to the executable.
-    if (Test-Path (Join-Path $root 'themes')) {
-        Copy-Item (Join-Path $root 'themes') (Join-Path $target 'themes') -Recurse -Force
+    foreach ($document in @('README.md', 'CHANGELOG.md', 'VERSION')) {
+        $source = Join-Path $root $document
+        if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $staging -Force }
+    }
+    $docs = Join-Path $root 'docs'
+    if (Test-Path -LiteralPath $docs) {
+        Copy-Item -LiteralPath $docs -Destination (Join-Path $staging 'docs') -Recurse -Force
+    }
+    $screenshots = Join-Path $root 'media\screenshots'
+    if (Test-Path -LiteralPath $screenshots) {
+        Copy-Item -LiteralPath $screenshots -Destination (Join-Path $staging 'media\screenshots') -Recurse -Force
     }
 
-    Copy-Item (Join-Path $root 'README.md') $target -Force
-    Copy-Item (Join-Path $root 'CHANGELOG.md') $target -Force
-    New-Item -ItemType Directory -Path (Join-Path $target 'Recordings') -Force | Out-Null
+    # The packaged documentation must not contain links that resolve only in the repository.
+    $markdown = @(Join-Path $staging 'README.md') + @(Get-ChildItem -LiteralPath (Join-Path $staging 'docs') -Filter *.md -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    foreach ($document in $markdown) {
+        $documentDir = Split-Path -Parent $document
+        $text = Get-Content -LiteralPath $document -Raw
+        foreach ($match in [regex]::Matches($text, '\]\(([^)]+)\)|<img[^>]+src="([^"]+)"')) {
+            $link = if ($match.Groups[1].Success) { $match.Groups[1].Value } else { $match.Groups[2].Value }
+            if ($link -match '^(https?:|mailto:|#)') { continue }
+            $relative = ($link -split '#')[0]
+            if ([string]::IsNullOrWhiteSpace($relative)) { continue }
+            $resolved = [IO.Path]::GetFullPath((Join-Path $documentDir $relative))
+            if (-not (Test-Path -LiteralPath $resolved)) {
+                throw "Packaged documentation link is broken: $document -> $link"
+            }
+        }
+    }
 
-    Write-Host "Published: $target" -ForegroundColor Green
-    Write-Host 'Portable layout: FastVRecorder.exe, media/, themes/, Recordings/, config/ (created on first run).'
+    foreach ($required in @('FastVRecorder.exe', 'FastVRecorder.Core.dll', 'media\start.wav', 'media\screenshots\recorder.png', 'languages\en.json', 'themes\goldendefault.json', 'docs\USER_GUIDE.md')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $staging $required))) {
+            throw "Staging validation failed: missing $required."
+        }
+    }
+    if ((Test-Path -LiteralPath (Join-Path $staging 'config')) -or
+        (Test-Path -LiteralPath (Join-Path $staging 'Recordings'))) {
+        throw 'Staging validation failed: generated package contains runtime data.'
+    }
+
+    Install-PortablePackage -Staging $staging -Target $target -RepoRoot $root | Out-Null
+    Write-Host "Published safely: $target" -ForegroundColor Green
+    Write-Host 'Existing config/, Recordings/, custom themes, languages and cue assets were preserved.'
 }
 finally {
+    if ($staging -and (Test-Path -LiteralPath $staging)) {
+        if ($KeepStaging) {
+            Write-Host "Staging kept for diagnosis: $staging" -ForegroundColor Yellow
+        }
+        else {
+            try { Remove-Item -LiteralPath $staging -Recurse -Force } catch { }
+        }
+    }
     Pop-Location
 }

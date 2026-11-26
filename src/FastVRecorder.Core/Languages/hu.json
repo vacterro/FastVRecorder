@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Sikertelen átnevezés: ",
     "Msg.Mp3FailedWavKept": "MP3 kódolás nem sikerült; a WAV fájl megtartásra került.",
     "Msg.NothingToOpen": "Még nincs megnyitható felvétel.",
-    "Msg.RecordingIncomplete": "Mentve, de előfordulhat, hogy a felvétel nem teljes: "
+    "Msg.RecordingIncomplete": "Mentve, de előfordulhat, hogy a felvétel nem teljes: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

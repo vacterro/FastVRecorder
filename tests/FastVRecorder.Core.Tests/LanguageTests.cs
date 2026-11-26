@@ -103,6 +103,14 @@ public sealed class LanguageTests
             Assert.Equal(1, LanguagePacks.LoadOverrides(root));
             Assert.Equal("OVERRIDE-OPEN", LanguagePacks.Translate("xx", "Common.Open"));
             Assert.Equal("Save", LanguagePacks.Translate("xx", "Common.Save"));
+
+            File.WriteAllText(Path.Combine(root, "de.json"), """
+                { "strings": { "Common.Open": "PARTIAL-DE" } }
+                """);
+            Assert.Equal(2, LanguagePacks.LoadOverrides(root));
+            Assert.Equal("PARTIAL-DE", LanguagePacks.Translate("de", "Common.Open"));
+            Assert.False(string.IsNullOrWhiteSpace(LanguagePacks.Translate("de", "Common.Save")));
+            Assert.NotEqual("Common.Save", LanguagePacks.Translate("de", "Common.Save"));
         }
         finally
         {

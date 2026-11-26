@@ -162,7 +162,9 @@ public sealed class HotkeysViewModel : ObservableObject
                 }
 
                 HotkeyGesture.TryParse(entry.Gesture, out var gesture);
-                Rows.Add(new HotkeyRow(action, Title(action), gesture, entry.Scope, _loc, OnRowScopeChanged));
+                var row = new HotkeyRow(action, Title(action), gesture, entry.Scope, _loc, OnRowScopeChanged);
+                if (HotkeyValidator.IsAltGrRisk(gesture)) row.StatusText = _loc["Keys.AltGrWarning"];
+                Rows.Add(row);
             }
         }
         finally
@@ -345,7 +347,7 @@ public sealed class HotkeysViewModel : ObservableObject
         {
             row.UpdateGesture(gesture);
             row.UpdateScopeSilent(scope);
-            row.StatusText = _loc["Keys.Saved"];
+            row.StatusText = _loc["Keys.Saved"] + (HotkeyValidator.IsAltGrRisk(gesture) ? " " + _loc["Keys.AltGrWarning"] : "");
         }
         finally
         {

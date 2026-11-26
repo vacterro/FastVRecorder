@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Det gick inte att byta namn: ",
     "Msg.Mp3FailedWavKept": "MP3-kodning misslyckades; WAV-filen behölls.",
     "Msg.NothingToOpen": "Ingen inspelning att öppna ännu.",
-    "Msg.RecordingIncomplete": "Sparad, men inspelningen kan vara ofullständig: "
+    "Msg.RecordingIncomplete": "Sparad, men inspelningen kan vara ofullständig: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

@@ -45,6 +45,7 @@ public sealed class RecordingEngine : IDisposable
     private int _mp3Kbps;
     private string _directory = string.Empty;
     private string _recordingId = string.Empty;
+    private string _sessionId = string.Empty;
     private string? _activePartPath;
     private DateTime _startedLocal;
     private long _finalizedBytes;
@@ -52,6 +53,10 @@ public sealed class RecordingEngine : IDisposable
     private volatile bool _stopWriter;
     private volatile bool _incomplete;
     private string? _incompleteReason;
+    private ManualResetEventSlim? _writerDone;
+    private bool _pendingWriterFinalization;
+    private TimeSpan _writerJoinTimeout = TimeSpan.FromSeconds(25);
+    internal Action? WriterLoopHook;
     private int _levelScaled;
     private readonly List<SegmentInfo> _segments = new();
     private readonly List<string> _completedFiles = new();
@@ -93,6 +98,15 @@ public sealed class RecordingEngine : IDisposable
     }
 
     public string LastError { get; private set; } = string.Empty;
+
+    public string SessionId => _sessionId;
+
+    /// <summary>Test seam: bounded wait for the writer thread; production default is 25 seconds.</summary>
+    internal TimeSpan WriterJoinTimeout
+    {
+        get => _writerJoinTimeout;
+        set => _writerJoinTimeout = value < TimeSpan.Zero ? TimeSpan.Zero : value;
+    }
 
     public string LastOutputPath { get; private set; } = string.Empty;
 
@@ -194,6 +208,19 @@ public sealed class RecordingEngine : IDisposable
     /// <summary>Caller already holds the serialized gate.</summary>
     private bool StartCoreLocked()
     {
+            if (_pendingWriterFinalization)
+            {
+                LastError = "The previous recording writer is still owned by an unfinished session. Wait for it to finish or restart the application.";
+                Error?.Invoke(this, new RecordingErrorEventArgs
+                {
+                    Message = LastError,
+                    IsFatal = false,
+                    SessionId = _sessionId,
+                    Outcome = RecordingOutcome.FailedRecoverable,
+                });
+                return false;
+            }
+
             if (State is not (RecordingState.Idle or RecordingState.Error))
             {
                 return false;
@@ -214,6 +241,9 @@ public sealed class RecordingEngine : IDisposable
             FormatText = settings.Recording.DescribeOutput();
             _startedLocal = DateTime.Now;
             _recordingId = Guid.NewGuid().ToString("N");
+            _sessionId = _recordingId;
+            _writerDone?.Dispose();
+            _writerDone = new ManualResetEventSlim(false);
 
             Transition(RecordingState.Starting);
 
@@ -288,6 +318,7 @@ public sealed class RecordingEngine : IDisposable
                 {
                     FormatText = FormatText,
                     OutputPath = DesiredOutputPath(_target),
+                    SessionId = _sessionId,
                 });
                 return true;
             }
@@ -300,14 +331,16 @@ public sealed class RecordingEngine : IDisposable
                     Message = ex.Message,
                     Exception = ex,
                     IsFatal = true,
+                    SessionId = _sessionId,
+                    Outcome = RecordingOutcome.FailedNoOutput,
                 });
-                CleanupFailedStart(ex);
-                Transition(RecordingState.Idle);
+                var cleaned = CleanupFailedStart(ex);
+                Transition(cleaned ? RecordingState.Idle : RecordingState.Error);
                 return false;
             }
     }
 
-    private void CleanupFailedStart(Exception error)
+    private bool CleanupFailedStart(Exception error)
     {
         try
         {
@@ -321,9 +354,25 @@ public sealed class RecordingEngine : IDisposable
         _stopWriter = true;
         _queue?.Complete();
         var thread = _writerThread;
-        if (thread is not null && thread != Thread.CurrentThread)
+        var writerDone = _writerDone;
+        var stopped = thread is null || thread == Thread.CurrentThread ||
+                      (writerDone is not null
+                          ? writerDone.Wait(_writerJoinTimeout)
+                          : thread.Join(_writerJoinTimeout));
+        if (stopped && thread is not null && thread != Thread.CurrentThread)
         {
-            thread.Join(TimeSpan.FromSeconds(5));
+            stopped = thread.Join(TimeSpan.FromSeconds(2));
+        }
+
+        if (!stopped)
+        {
+            _pendingWriterFinalization = true;
+            _incomplete = true;
+            _incompleteReason = "A failed start left a writer thread alive; its partial file is preserved and no new recording may start until it exits.";
+            LastError = _incompleteReason;
+            _log.Error(_incompleteReason);
+            StartDeferredFinalization();
+            return false;
         }
 
         var target = _target;
@@ -358,6 +407,7 @@ public sealed class RecordingEngine : IDisposable
         }
 
         ResetSession();
+        return true;
     }
 
     // ---------------------------------------------------------------- stop
@@ -450,13 +500,43 @@ public sealed class RecordingEngine : IDisposable
         DetachCapture();
         _stopWriter = true;
         _queue?.Complete();
+
         var writerThread = _writerThread;
-        if (writerThread is not null && writerThread != Thread.CurrentThread &&
-            !writerThread.Join(TimeSpan.FromSeconds(25)))
+        var writerDone = _writerDone;
+        var stopped = writerDone is not null
+            ? writerDone.Wait(_writerJoinTimeout)
+            : writerThread is null || writerThread.Join(_writerJoinTimeout);
+
+        if (stopped && writerThread is not null && writerThread != Thread.CurrentThread)
         {
-            _log.Warn("Writer thread did not stop within 25 s.");
+            // The event is set in the writer's finally block; ensure the thread actually left.
+            stopped = writerThread.Join(TimeSpan.FromSeconds(2));
         }
 
+        if (!stopped)
+        {
+            _pendingWriterFinalization = true;
+            _incomplete = true;
+            _incompleteReason = $"The recording writer did not stop within {_writerJoinTimeout.TotalSeconds:0.#} s. Partial audio is preserved for recovery; no new recording will start until the writer finishes.";
+            LastError = _incompleteReason;
+            _log.Error(_incompleteReason);
+            Error?.Invoke(this, new RecordingErrorEventArgs
+            {
+                Message = LastError,
+                IsFatal = true,
+                SessionId = _sessionId,
+                Outcome = RecordingOutcome.FailedRecoverable,
+            });
+            Transition(RecordingState.Error);
+            StartDeferredFinalization();
+            return;
+        }
+
+        FinishStoppedSession(reason, failure);
+    }
+
+    private void FinishStoppedSession(string? reason, bool failure)
+    {
         string? finalizeError = null;
         try
         {
@@ -492,6 +572,7 @@ public sealed class RecordingEngine : IDisposable
         }
 
         var files = _completedFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var outcome = DetermineOutcome(failure, finalizeError, encodeError, files.Count > 0);
         if (files.Count > 0)
         {
             long size = 0;
@@ -501,7 +582,7 @@ public sealed class RecordingEngine : IDisposable
             }
 
             LastOutputPath = files[^1];
-            if (_incomplete)
+            if (outcome != RecordingOutcome.Success)
             {
                 foreach (var file in files)
                 {
@@ -516,6 +597,8 @@ public sealed class RecordingEngine : IDisposable
                 SizeBytes = size,
                 Files = files,
                 Note = note,
+                SessionId = _sessionId,
+                Outcome = outcome,
             });
         }
         else
@@ -524,10 +607,16 @@ public sealed class RecordingEngine : IDisposable
                 ? reason ?? "Recording failed before any audio could be saved."
                 : "No audio was recorded; nothing was saved.";
             LastError = message;
-            Error?.Invoke(this, new RecordingErrorEventArgs { Message = message, IsFatal = true });
+            Error?.Invoke(this, new RecordingErrorEventArgs
+            {
+                Message = message,
+                IsFatal = true,
+                SessionId = _sessionId,
+                Outcome = outcome,
+            });
         }
 
-        if (failure || finalizeError is not null || encodeError is not null)
+        if (outcome != RecordingOutcome.Success)
         {
             if (encodeError is not null)
             {
@@ -542,11 +631,6 @@ public sealed class RecordingEngine : IDisposable
                 LastError = reason ?? "Recording stopped after an error.";
             }
 
-            Error?.Invoke(this, new RecordingErrorEventArgs
-            {
-                Message = LastError,
-                IsFatal = false,
-            });
             Transition(RecordingState.Error);
             Transition(RecordingState.Idle);
         }
@@ -555,8 +639,96 @@ public sealed class RecordingEngine : IDisposable
             Transition(RecordingState.Idle);
         }
 
-        _log.Info($"Recording stopped. Files: {string.Join(", ", files)}");
+        _log.Info($"Recording stopped ({outcome}). Files: {string.Join(", ", files)}");
         ResetSession();
+    }
+
+    private static RecordingOutcome DetermineOutcome(bool failure, string? finalizeError, string? encodeError, bool hasFiles)
+    {
+        if (hasFiles)
+        {
+            return failure || finalizeError is not null || encodeError is not null
+                ? RecordingOutcome.PartialSaved
+                : RecordingOutcome.Success;
+        }
+
+        return failure || finalizeError is not null
+            ? RecordingOutcome.FailedRecoverable
+            : RecordingOutcome.CancelledNoAudio;
+    }
+
+    /// <summary>
+    /// A timed-out writer still owns the active writer/queue/target. Wait for it to exit, then
+    /// finalize under the gate. Recording stays blocked until this completes.
+    /// </summary>
+    private void StartDeferredFinalization()
+    {
+        var writerDone = _writerDone;
+        if (writerDone is null) return;
+
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            try
+            {
+                writerDone.Wait();
+                if (!_gate.Wait(TimeSpan.FromSeconds(60)))
+                {
+                    _log.Error("Deferred writer finalization could not acquire the engine gate.");
+                    return;
+                }
+
+                try
+                {
+                    if (!_pendingWriterFinalization) return;
+                    var finalizeError = (string?)null;
+                    try
+                    {
+                        FinalizeCurrentSegment();
+                    }
+                    catch (Exception ex)
+                    {
+                        finalizeError = ex.Message;
+                        _log.Error("Deferred finalization failed; partial data remains recoverable", ex);
+                    }
+
+                    if (_outputFormat == OutputFormat.Mp3 && _segments.Count > 0)
+                    {
+                        var encodeError = EncodeSegments();
+                        if (encodeError is not null && finalizeError is null)
+                        {
+                            finalizeError = "MP3 encoding failed: " + encodeError;
+                        }
+                    }
+
+                    var files = _completedFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (files.Count > 0)
+                    {
+                        LastOutputPath = files[^1];
+                        foreach (var file in files)
+                        {
+                            _history.Update(file, entry => entry.Note ??= "Saved after a delayed writer shutdown.");
+                        }
+                        _log.Info("Deferred writer finalization completed: " + files[^1]);
+                    }
+                    else
+                    {
+                        LastError = finalizeError ?? "The writer exited but no completed audio file remained; the .part data is recoverable.";
+                        _log.Error(LastError);
+                    }
+
+                    Transition(RecordingState.Idle);
+                    ResetSession();
+                }
+                finally
+                {
+                    _gate.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Deferred writer finalization crashed", ex);
+            }
+        });
     }
 
     private string? EncodeSegments()
@@ -701,6 +873,7 @@ public sealed class RecordingEngine : IDisposable
         {
             while (true)
             {
+                WriterLoopHook?.Invoke();
                 var queue = _queue;
                 if (queue is null)
                 {
@@ -758,6 +931,10 @@ public sealed class RecordingEngine : IDisposable
             var queue = _queue;
             queue?.Complete();
             ThreadPool.QueueUserWorkItem(_ => FatalStop("Recording stopped after a disk write error: " + ex.Message, ex));
+        }
+        finally
+        {
+            try { _writerDone?.Set(); } catch (ObjectDisposedException) { }
         }
     }
 
@@ -824,12 +1001,7 @@ public sealed class RecordingEngine : IDisposable
             if (State is RecordingState.Recording or RecordingState.Paused or RecordingState.Starting)
             {
                 LastError = message;
-                Error?.Invoke(this, new RecordingErrorEventArgs
-                {
-                    Message = message,
-                    Exception = exception,
-                    IsFatal = true,
-                });
+                // The stop path owns the single completion/error event for this session.
                 StopCoreLocked(message, failure: true);
             }
         }
@@ -932,6 +1104,9 @@ public sealed class RecordingEngine : IDisposable
         _stopWriter = false;
         _incomplete = false;
         _incompleteReason = null;
+        _pendingWriterFinalization = false;
+        try { _writerDone?.Dispose(); } catch { }
+        _writerDone = null;
         Interlocked.Exchange(ref _liveBytes, 0);
         Interlocked.Exchange(ref _levelScaled, 0);
     }

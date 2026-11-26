@@ -74,7 +74,8 @@ public sealed class RecoveryServiceTests : TempDirectoryTest
         var format = TargetFormat.Standard;
         const string stem = "2026-01-02_03-04-05";
         var part = CreatePartial(harness.Folder, stem, format, 9600, writeMetadata: true, out var metaPath, out var intendedPath);
-        File.WriteAllBytes(intendedPath, Array.Empty<byte>()); // reservation placeholder
+        var sentinelBytes = new byte[] { 0x00, 0x11, 0x22, 0x33 };
+        File.WriteAllBytes(intendedPath, sentinelBytes); // unrelated zero/placeholder-like file
         harness.Journal.Add(new JournalEntry { PartPath = part, MetaPath = metaPath, FinalPath = intendedPath, StartedUtc = DateTime.UtcNow });
 
         var service = new RecoveryService(harness.Paths, harness.Journal, harness.History, NullLog.Instance, () => harness.Settings);
@@ -86,7 +87,8 @@ public sealed class RecoveryServiceTests : TempDirectoryTest
         Assert.True(WavVerifier.Verify(item.Path, format, 9600, out var error), error);
         Assert.Equal(TimeSpan.FromSeconds(0.1), item.Duration);
         Assert.True(File.Exists(part));
-        Assert.False(File.Exists(intendedPath));
+        Assert.True(File.Exists(intendedPath));
+        Assert.Equal(sentinelBytes, File.ReadAllBytes(intendedPath));
         Assert.True(File.Exists(Path.ChangeExtension(part, null) + ".recovered"));
         Assert.Empty(harness.Journal.Snapshot());
 

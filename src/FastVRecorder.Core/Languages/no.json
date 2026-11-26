@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Endre navn mislyktes: ",
     "Msg.Mp3FailedWavKept": "MP3-koding mislyktes; WAV-filen ble beholdt.",
     "Msg.NothingToOpen": "Ingen opptak å åpne ennå.",
-    "Msg.RecordingIncomplete": "Lagret, men opptaket kan være ufullstendig: "
+    "Msg.RecordingIncomplete": "Lagret, men opptaket kan være ufullstendig: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

@@ -74,7 +74,8 @@ public sealed class RecoveryService
             }
             else
             {
-                _journal.Remove(entry.PartPath);
+                // The volume may simply be disconnected; keep the journal so reconnecting retries.
+                _log.Warn("Journal part is currently unavailable: " + entry.PartPath);
             }
         }
 
@@ -96,8 +97,20 @@ public sealed class RecoveryService
             try
             {
                 var recovered = RecoverOne(part, report);
-                if (recovered is not null) report.Recovered.Add(recovered);
-                else _journal.Remove(part);
+                if (recovered is not null)
+                {
+                    report.Recovered.Add(recovered);
+                }
+                else
+                {
+                    var basePath = part.EndsWith(FileNamer.PartSuffix, StringComparison.OrdinalIgnoreCase)
+                        ? part[..^FileNamer.PartSuffix.Length]
+                        : part;
+                    if (File.Exists(basePath + ".recovered"))
+                    {
+                        _journal.Remove(part);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -181,89 +194,124 @@ public sealed class RecoveryService
         if (File.Exists(markerPath))
         {
             _log.Debug("Partial already recovered: " + partPath);
+            _journal.Remove(partPath);
             return null;
         }
 
         if (metadata?.RecoveredAtUtc is not null && metadata.RecoveredPath is not null && File.Exists(metadata.RecoveredPath))
         {
+            _journal.Remove(partPath);
             return null;
         }
 
         if (File.Exists(unrecoverableMarker))
         {
+            _journal.Remove(partPath);
             return null;
         }
 
         if (!WavHeader.TryParse(partPath, out var info, out var headerError) || info is null)
         {
-            Fail(partPath, "Cannot read the stored WAV header: " + headerError, unrecoverableMarker, report);
+            Fail(partPath, "Cannot read the stored WAV header: " + headerError, unrecoverableMarker, report, permanent: true);
             return null;
         }
 
         var format = info.ToTargetFormat();
         if (format is null)
         {
-            Fail(partPath, $"Unsupported stored format (tag {info.FormatTag}, {info.BitsPerSample}-bit).", unrecoverableMarker, report);
+            Fail(partPath, $"Unsupported stored format (tag {info.FormatTag}, {info.BitsPerSample}-bit).", unrecoverableMarker, report, permanent: true);
             return null;
         }
 
         var dataBytes = info.PhysicalDataBytes;
         if (dataBytes < format.BlockAlign)
         {
-            Fail(partPath, "No complete audio frames are stored.", unrecoverableMarker, report);
+            Fail(partPath, "No complete audio frames are stored.", unrecoverableMarker, report, permanent: true);
             return null;
         }
 
         var directory = Path.GetDirectoryName(partPath)!;
         var stem = Path.GetFileNameWithoutExtension(basePath);
         var outputPath = Path.Combine(directory, stem + "_RECOVERED.wav");
-        if (File.Exists(outputPath))
-        {
-            outputPath = FileNamer.NextFreePath(outputPath);
-        }
-
         long written;
-        using (var writer = WavStreamWriter.CreateNew(outputPath, format, dataBytes + format.BlockAlign))
+
+        var adopted = File.Exists(outputPath) &&
+                      WavVerifier.Verify(outputPath, format, dataBytes, out _) &&
+                      CanReadAudio(outputPath, out _);
+        if (adopted)
         {
-            using var source = new FileStream(partPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1 << 16);
-            source.Position = info.DataOffset;
-            var buffer = new byte[(int)Math.Min(int.MaxValue, (long)format.BlockAlign * 65536)];
-            var remaining = dataBytes;
-            while (remaining >= format.BlockAlign)
+            // A crash after publishing the recovered file but before history/marker commit:
+            // adopt the verified file instead of creating an uncontrolled duplicate.
+            written = dataBytes;
+            _log.Info("Adopting existing verified recovery output: " + outputPath);
+        }
+        else
+        {
+            if (File.Exists(outputPath))
             {
-                var want = (int)Math.Min(buffer.Length, remaining);
-                want -= want % format.BlockAlign;
-                if (want <= 0) break;
-                var read = source.Read(buffer, 0, want);
-                if (read <= 0) break;
-                read -= read % format.BlockAlign;
-                if (read <= 0) break;
-                writer.Write(buffer.AsSpan(0, read));
-                remaining -= read;
+                outputPath = FileNamer.NextFreePath(outputPath);
             }
 
-            written = writer.DataBytes;
-            writer.Complete();
+            var temporary = outputPath + ".tmp-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                using (var writer = WavStreamWriter.CreateNew(temporary, format, dataBytes + format.BlockAlign))
+                {
+                    using var source = new FileStream(partPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1 << 16);
+                    source.Position = info.DataOffset;
+                    written = CopyWholeFrames(source, writer, dataBytes);
+                    writer.Complete();
+                }
+
+                if (written == 0)
+                {
+                    Fail(partPath, "Copying the stored audio produced no frames.", unrecoverableMarker, report, permanent: true);
+                    return null;
+                }
+
+                if (!WavVerifier.Verify(temporary, format, written, out var verifyError))
+                {
+                    Fail(partPath, "Recovered WAV failed verification: " + verifyError, unrecoverableMarker, report, permanent: true);
+                    return null;
+                }
+
+                if (!CanReadAudio(temporary, out var playError))
+                {
+                    Fail(partPath, "Recovered WAV cannot be read back: " + playError, unrecoverableMarker, report, permanent: true);
+                    return null;
+                }
+
+                var finalPath = outputPath;
+                if (File.Exists(finalPath))
+                {
+                    finalPath = FileNamer.NextFreePath(finalPath);
+                }
+
+                File.Move(temporary, finalPath, overwrite: false);
+                outputPath = finalPath;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A locked/removed/malformed volume is transient: keep the journal and retry later.
+                _log.Warn($"Recovery I/O failed for {partPath}; the partial file and journal were kept: {ex.Message}");
+                report.Failed.Add(new RecoveryFailure { Path = partPath, Error = "Transient recovery failure: " + ex.Message });
+                return null;
+            }
+            finally
+            {
+                TryDelete(temporary);
+            }
         }
 
-        if (written == 0)
+        if (!WavVerifier.Verify(outputPath, format, written, out var resultVerifyError))
         {
-            TryDelete(outputPath);
-            Fail(partPath, "Copying the stored audio produced no frames.", unrecoverableMarker, report);
+            Fail(partPath, "Recovered WAV failed final verification: " + resultVerifyError, unrecoverableMarker, report, permanent: true);
             return null;
         }
 
-        if (!WavVerifier.Verify(outputPath, format, written, out var verifyError))
+        if (!CanReadAudio(outputPath, out var resultReadError))
         {
-            TryDelete(outputPath);
-            Fail(partPath, "Recovered WAV failed verification: " + verifyError, unrecoverableMarker, report);
-            return null;
-        }
-
-        if (!CanReadAudio(outputPath, out var playError))
-        {
-            TryDelete(outputPath);
-            Fail(partPath, "Recovered WAV cannot be read back: " + playError, unrecoverableMarker, report);
+            Fail(partPath, "Recovered WAV cannot be read back: " + resultReadError, unrecoverableMarker, report, permanent: true);
             return null;
         }
 
@@ -304,14 +352,10 @@ public sealed class RecoveryService
         });
 
         _journal.Remove(partPath);
-        _log.Info($"Recovered partial recording {partPath} -> {outputPath} ({duration:hh\\:mm\\:ss}).");
+        _log.Info($"Recovered partial recording {partPath} -> {outputPath} ({duration}).");
 
-        // The reserved final file (if any) is an empty placeholder created by the reservation; the
-        // partial audio is kept as-is for diagnosis.
-        if (metadata?.IntendedOutputPath is { } intended && File.Exists(intended) && new FileInfo(intended).Length == 0)
-        {
-            TryDelete(intended);
-        }
+        // Never delete a file merely because recovery metadata references it. The part itself is
+        // preserved for diagnosis; only the newly created/adopted recovered output is published.
 
         return new RecoveredItem
         {
@@ -323,10 +367,49 @@ public sealed class RecoveryService
         };
     }
 
-    private void Fail(string partPath, string error, string markerPath, RecoveryReport report)
+    /// <summary>Copies whole frames while tolerating short, non-frame-aligned stream reads.</summary>
+    internal static long CopyWholeFrames(Stream source, WavStreamWriter writer, long dataBytes)
+    {
+        var block = writer.Format.BlockAlign;
+        var buffer = new byte[block * 65536];
+        var carry = 0;
+        var remaining = dataBytes;
+        long written = 0;
+        while (remaining > 0)
+        {
+            var want = (int)Math.Min(buffer.Length - carry, remaining);
+            if (want <= 0) break;
+            var read = source.Read(buffer, carry, want);
+            if (read <= 0) break;
+            var total = carry + read;
+            var whole = total - total % block;
+            if (whole > 0)
+            {
+                writer.Write(buffer.AsSpan(0, whole));
+                written += whole;
+            }
+
+            carry = total - whole;
+            if (carry > 0 && whole > 0)
+            {
+                Buffer.BlockCopy(buffer, whole, buffer, 0, carry);
+            }
+
+            remaining -= read;
+        }
+
+        return written;
+    }
+
+    private void Fail(string partPath, string error, string markerPath, RecoveryReport report, bool permanent)
     {
         _log.Warn($"Cannot recover {partPath}: {error}");
         report.Failed.Add(new RecoveryFailure { Path = partPath, Error = error });
+        if (!permanent)
+        {
+            return;
+        }
+
         TryWriteJson(markerPath, new
         {
             error,

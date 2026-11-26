@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Yeniden adlandırma başarısız oldu: ",
     "Msg.Mp3FailedWavKept": "MP3 kodlaması başarısız oldu; WAV dosyası tutuldu.",
     "Msg.NothingToOpen": "Henüz açılacak kayıt yok.",
-    "Msg.RecordingIncomplete": "Kaydedildi ancak kayıt eksik olabilir: "
+    "Msg.RecordingIncomplete": "Kaydedildi ancak kayıt eksik olabilir: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

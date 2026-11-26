@@ -1,4 +1,4 @@
-# FastVRecorder 0.0.1 — User and technical guide
+# FastVRecorder 0.0.2 — User and technical guide
 
 [Back to project overview](../README.md)
 
@@ -166,7 +166,7 @@ Requirements for building: Windows 10/11 x64 and the .NET 10 SDK.
 scripts\Build.ps1        # restore + build Release
 scripts\Test.ps1         # xUnit core + integration tests
 scripts\Publish.ps1      # tests, then self-contained win-x64 portable build in dist\FastVRecorder
-scripts\Clean-Build.ps1  # remove bin/obj/dist
+scripts\Clean-Build.ps1  # remove bin/obj and owned publish staging (dist is preserved)
 ```
 
 Manual equivalents:
@@ -183,15 +183,15 @@ Startup-folder shortcut cannot be created by *Start with Windows*.
 
 ## Tests
 
-- `FastVRecorder.Core.Tests` (79 tests): naming/reservation, WAV header/writer/verifier, device
+- `FastVRecorder.Core.Tests` (87 tests): naming/reservation, WAV header/writer/verifier, device
   format conversion and resampling, settings atomicity/backup/corruption/migration, hotkey parsing
   and validation, theme contract, history index, journal.
-- `FastVRecorder.Integration.Tests` (24 tests): full engine start/stop with a deterministic fake
+- `FastVRecorder.Integration.Tests` (36 tests): full engine start/stop with a deterministic fake
   capture device, concurrent start/stop, pause/resume, missing microphone, unavailable folder,
   MP3 when Media Foundation exists, crash recovery from `.part` with and without metadata,
   idempotent recovery, journal-driven discovery, damaged-part handling, cue player failure modes.
 
-Run `scripts\Test.ps1`.
+Run `scripts\Test.ps1` (123 tests).
 
 ## Defaults
 
@@ -221,20 +221,21 @@ Run `scripts\Test.ps1`.
   advertising formats that do not work out of the box.
 - Recovery can only restore bytes that reached the file system. Data the OS or the drive never
   flushed cannot be invented.
-- No waveform editor, pinning/search/filtering is optional and not included in 0.0.1.
+- No waveform editor, pinning/search/filtering is optional and not included in 0.0.2.
 - The 31 added language packs are machine-translated from English; every missing key falls back
   to English, and any pack can be corrected in `languages/<code>.json` without rebuilding.
 - The full WASAPI path was exercised against a real `ATR2100x-USB` endpoint, including real
-  multi-second WAV files and a forced process kill with successful `_RECOVERED.wav` rebuild. In
-  this session the endpoint delivered only near-silence (about -65 dBFS peak) to NAudio and to
-  FFmpeg/DirectShow alike, so the app faithfully recorded what Windows supplied. Use
-  **Settings → Recording → Test microphone** to confirm the input signal before recording.
+  multi-second WAV files and a forced process kill with successful `_RECOVERED.wav` rebuild. An
+  earlier build had a ring-buffer write-cursor bug that produced near-silence (about -65 dBFS);
+  after the fix the same endpoint produced peak 13925 / RMS 1537 and a verified 3.11 s recording.
+  A genuinely quiet input can still look silent; use **Settings → Recording → Test microphone**
+  to check the signal before recording.
 
 ## Screenshots
 
 All captures live in [media/screenshots](../media/screenshots) (English, German, Chinese, Arabic RTL).
 
-| Recorder | Live recording | Saved | Starting |
+| Recorder | Live recording | Saved | History |
 |---|---|---|---|
 | <img src="../media/screenshots/recorder.png" width="230"> | <img src="../media/screenshots/recording-live.png" width="230"> | <img src="../media/screenshots/saved.png" width="230"> | <img src="../media/screenshots/history.png" width="230"> |
 
@@ -251,4 +252,4 @@ Additional captures: hotkey assignment, microphone test, and the original operat
   recovery algorithm, theme and hotkey design.
 - [docs/ACCEPTANCE.md](ACCEPTANCE.md) — requirement-to-evidence matrix for the handoff.
 - [docs/ROADMAP.md](ROADMAP.md) — deliberately deferred work.
-- [CHANGELOG.md](../CHANGELOG.md) — 0.0.1 contents.
+- [CHANGELOG.md](../CHANGELOG.md) — release history.

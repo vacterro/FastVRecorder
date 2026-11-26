@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "이름 바꾸기 실패: ",
     "Msg.Mp3FailedWavKept": "MP3 인코딩에 실패했습니다. WAV 파일이 보관되었습니다.",
     "Msg.NothingToOpen": "아직 열 수 있는 녹음이 없습니다.",
-    "Msg.RecordingIncomplete": "저장되었지만 녹음이 불완전할 수 있습니다. "
+    "Msg.RecordingIncomplete": "저장되었지만 녹음이 불완전할 수 있습니다. ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

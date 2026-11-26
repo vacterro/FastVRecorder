@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "名前の変更に失敗しました: ",
     "Msg.Mp3FailedWavKept": "MP3 エンコードに失敗しました。 WAVファイルは保存されていました。",
     "Msg.NothingToOpen": "まだ開く録画がありません。",
-    "Msg.RecordingIncomplete": "保存されましたが、記録が不完全である可能性があります: "
+    "Msg.RecordingIncomplete": "保存されましたが、記録が不完全である可能性があります: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

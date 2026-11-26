@@ -13,6 +13,16 @@ public enum RecordingState
     Error,
 }
 
+/// <summary>Authoritative result of one recording session.</summary>
+public enum RecordingOutcome
+{
+    Success,
+    PartialSaved,
+    FailedRecoverable,
+    FailedNoOutput,
+    CancelledNoAudio,
+}
+
 /// <summary>Raised when the engine transitions between states.</summary>
 public sealed class StateChangedEventArgs : EventArgs
 {
@@ -33,6 +43,11 @@ public sealed class RecordingErrorEventArgs : EventArgs
     public required string Message { get; init; }
     public Exception? Exception { get; init; }
     public bool IsFatal { get; init; }
+
+    /// <summary>Session that produced the error; stale events must be ignored by the UI.</summary>
+    public string? SessionId { get; init; }
+
+    public RecordingOutcome? Outcome { get; init; }
 }
 
 /// <summary>Raised when a recording completes (or is stopped) successfully.</summary>
@@ -47,6 +62,10 @@ public sealed class RecordingCompletedEventArgs : EventArgs
 
     /// <summary>Non-null when the save succeeded but data may be incomplete (overflow, device loss).</summary>
     public string? Note { get; init; }
+
+    public required string SessionId { get; init; }
+
+    public required RecordingOutcome Outcome { get; init; }
 }
 
 /// <summary>Raised after the capture device and the writer are both running.</summary>
@@ -54,5 +73,6 @@ public sealed class RecordingStartedEventArgs : EventArgs
 {
     public required string FormatText { get; init; }
     public required string OutputPath { get; init; }
+    public required string SessionId { get; init; }
 }
 

@@ -9,27 +9,42 @@ public static class AtomicFile
     {
         var dir = Path.GetDirectoryName(Path.GetFullPath(path))!;
         Directory.CreateDirectory(dir);
-        var tmp = path + ".tmp";
+        var tmp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         var bytes = Encoding.UTF8.GetBytes(content);
-        using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+        try
         {
-            fs.Write(bytes);
-            fs.Flush(flushToDisk: true);
-        }
-        if (File.Exists(path))
-        {
-            if (keepBackup)
+            using (var fs = new FileStream(tmp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             {
-                File.Replace(tmp, path, path + ".bak", ignoreMetadataErrors: true);
+                fs.Write(bytes);
+                fs.Flush(flushToDisk: true);
+            }
+        }
+        catch
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+            throw;
+        }
+        try
+        {
+            if (File.Exists(path))
+            {
+                if (keepBackup)
+                {
+                    File.Replace(tmp, path, path + ".bak", ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    File.Move(tmp, path, overwrite: true);
+                }
             }
             else
             {
-                File.Move(tmp, path, overwrite: true);
+                File.Move(tmp, path);
             }
         }
-        else
+        finally
         {
-            File.Move(tmp, path);
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
         }
     }
 

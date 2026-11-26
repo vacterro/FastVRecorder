@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Uudelleennimeäminen epäonnistui: ",
     "Msg.Mp3FailedWavKept": "MP3-koodaus epäonnistui; WAV-tiedosto säilytettiin.",
     "Msg.NothingToOpen": "Tallennetta ei ole vielä avattava.",
-    "Msg.RecordingIncomplete": "Tallennettu, mutta tallennus voi olla epätäydellinen: "
+    "Msg.RecordingIncomplete": "Tallennettu, mutta tallennus voi olla epätäydellinen: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

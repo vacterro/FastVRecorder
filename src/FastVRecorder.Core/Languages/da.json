@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Omdøb mislykkedes: ",
     "Msg.Mp3FailedWavKept": "MP3-kodning mislykkedes; WAV-filen blev gemt.",
     "Msg.NothingToOpen": "Ingen optagelse at åbne endnu.",
-    "Msg.RecordingIncomplete": "Gemt, men optagelsen kan være ufuldstændig: "
+    "Msg.RecordingIncomplete": "Gemt, men optagelsen kan være ufuldstændig: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

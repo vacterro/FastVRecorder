@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Не атрымалася перайменаваць: ",
     "Msg.Mp3FailedWavKept": "Памылка кадавання MP3; файл WAV быў захаваны.",
     "Msg.NothingToOpen": "Пакуль няма запісу для адкрыцця.",
-    "Msg.RecordingIncomplete": "Захавана, але запіс можа быць няпоўным: "
+    "Msg.RecordingIncomplete": "Захавана, але запіс можа быць няпоўным: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

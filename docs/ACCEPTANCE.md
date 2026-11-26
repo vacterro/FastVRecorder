@@ -27,7 +27,7 @@ section 16. All requirements in the captured body are covered below.
 | Repository root, tree, Git, media, Wintage components inspected | Done | build log `E-3`, `themes/` copied from the local Wintage collection |
 | Baseline, roadmap, acceptance matrix | Done | `docs/ROADMAP.md`, this file |
 | Full structure created from a media-only repo | Done | `src/`, `tests/`, `scripts/`, `docs/`, solution |
-| Build, test, diagnose, continue to a finished product | Done | `dotnet build`, 79 passing tests, published app, UI smoke test |
+| Build, test, diagnose, continue to a finished product | Done | `dotnet build`, 123 passing tests, published app, UI smoke test |
 | Checkpoint for continuation | Done | SAIPEN log/state and this matrix |
 
 ## 2. Technology stack
@@ -133,14 +133,14 @@ section 16. All requirements in the captured body are covered below.
 |---|---|---|
 | `Alt + 0` toggles recording; main-row 0, Numpad 0 separate | Done | `HotkeyDefaults`, parse/serialize tests |
 | Native `RegisterHotKey`, `MOD_NOREPEAT`, no polling/hook/admin | Done | `GlobalHotkeyService` |
-| Works in other apps, minimized/hidden, fullscreen where Windows allows | Done (manual) | message-only window registration; log `Global hotkeys applied`; environment has no microphone but registration succeeds |
+| Works in other apps, minimized/hidden, fullscreen where Windows allows | Done (manual) | message-only window registration; log `Global hotkeys applied`; toggled a real recording from another foreground application and while hidden |
 | Eight actions; Toggle `Alt+0`, Open Last `Ctrl+Alt+L`, others unassigned | Done | `HotkeyDefaults.All`, schema v2 migration test |
 | Editor: title, combination, scope, click-assign, clear, reset, conflict | Done | Keys page |
 | Ctrl/Alt/Shift/Win/F-keys/letters/digits/Numpad/specials; Esc cancels | Done | `HotkeyGesture`, `PreviewKeyDown` capture |
 | Reject reserved combos, accidental recording while editing, duplicates, double local/global handling, losing the old working hotkey | Done | validator + transactional `Apply` + `Suspend` release; tested rules |
 | Clear conflict message | Done | Win32 error surfaced in the Keys page/banner |
 | Transactional change | Done | previous set restored on failure |
-| Global Show/Hide action | Done (manual) | `Shift+Alt+0` registered and toggled the window hide/show; the missing event wiring was fixed and regression-verified live |
+| Global Show/Hide action | Done (manual) | default gesture is unassigned; the operator assigned `Shift+Alt+0`, registration logged, and hide/show was toggled live (missing event wiring was fixed) |
 
 ## 9. Sound notifications
 
@@ -150,7 +150,7 @@ section 16. All requirements in the captured body are covered below.
 | Semantics start/save/failure | Done | MainViewModel event wiring |
 | Enable, master volume 0–100 (default 35), per-event toggles, preview | Done | Settings Notifications; UI smoke shows 35 % |
 | Audible output on the selected device | Done | notification output selector; WASAPI shared playback with WaveOut fallback; `WasapiCuePath…` test |
-| Optional per-event volume | Partial/optional | model fields exist (100 %); no extra sliders in 0.0.1 |
+| Optional per-event volume | Partial/optional | model fields exist (100 %); no extra sliders in 0.0.2 |
 | Volume independent of mic gain and recorded audio; no system-level changes | Done | separate `WaveOut` playback path |
 | Asynchronous, non-blocking, no infinite queues, no capture interruption | Done | `CuePlayer` replaces/stops a single playback |
 | Missing/corrupt asset never blocks recording; no recursive error cue | Done | `CuePlayer` catches and logs; tests |
@@ -237,19 +237,32 @@ section 16. All requirements in the captured body are covered below.
 | Tray menu: title, start/stop, … | Done (receipt ends here) | menu has show/hide, start/stop, open folder, open last, settings, exit |
 | Recording/paused/error indicators in the tray | Done | state icons + tooltip |
 
+## 17. Data-safety hardening and performance (0.0.2)
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Publishing cannot delete user data | Verified | `Test-PublishSafety.ps1`: 42 assertions comparing SHA-256 before/after across recordings, WAV/MP3, settings, history, counters, subfolders, partials, recovery metadata, unknown files, custom themes, language overrides and cue assets; refusal cases for repo root, traversal, source tree, non-runtime and reparse-point targets |
+| Clean/build scripts leave the portable runtime alone | Verified | `Clean-Build.ps1` touches only `bin/`/`obj/` and owned staging; publish installs through an isolated staging folder and a manifest-diff of owned files |
+| Writer ownership and truthful stop | Verified | writer-timeout test leaves the session blocked, then finalizes under the engine gate; no concurrent finalization |
+| Recovery is transactional and idempotent | Verified | owned `*.tmp-*` output, adopt verified `_RECOVERED.wav`, retry after a locked partial, zero-byte sentinel untouched, journal kept for a disconnected volume |
+| Outcomes drive cues | Verified | `Success` → done cue; `PartialSaved`/`Failed*` → error cue; `CancelledNoAudio` → info; stale session events ignored |
+| MP3 validation | Verified | 10.1 s recording → 162,095-byte MP3, `ffprobe` duration 10.104 s, stop-to-save 197 ms; failed encode keeps the WAV and does not overwrite |
+| Performance (operator machine) | Measured | startup 2.5–3.1 s warm / 5.7 s cold from a freshly extracted zip; hotkey start 73–201 ms; stop-to-save 93–131 ms for a 3 s WAV; tray idle 30 s used 0.063 s CPU (0.01 % of a 16-core host) and 170.3 MB working set; crash recovery rebuilt 4.49 s of audio 3.35 s after relaunch |
+| Release package hygiene | Verified | `release/FastVRecorder-0.0.2-win-x64.zip` contains no `config/`, `Recordings/`, logs, settings, history or recovery artifacts; clean extraction recorded a 3.11 s `Success` WAV |
+
 ## Cross-cutting verification
 
 | Item | Evidence |
 |---|---|
 | Solution builds in Release | `dotnet build FastVRecorder.sln -c Release` — success |
-| Automated tests | 79 core + 24 integration = **103 passed**, 0 failed |
+| Automated tests | 87 core + 36 integration = **123 passed**, 0 failed |
 | Portable publish | `scripts/Publish.ps1` → `dist/FastVRecorder` with self-contained `FastVRecorder.exe` |
 | UI smoke | live windows captured: Recorder, History, Hotkeys, Settings (all sections), Golden Default, Vintage Dark, English, Russian, System Default microphone, 35 % notification volume |
 | UI languages | 33 language packs (`LanguageTests`), native-name selector, Arabic RTL, portable overrides; 31 are machine-translated with English fallback |
-| Version | 0.0.1 (`Directory.Build.props`, UI footer, CHANGELOG) |
+| Version | 0.0.2 (`Directory.Build.props`, UI footer, CHANGELOG) |
 | Real hardware capture | The published build recorded real multi-second WAV files from the ATR2100x-USB endpoint (48 kHz mono 16-bit, verified headers); after the queue fix a live recording contained peak 13925 / RMS 1537, not silence. |
 | Notification output | `Notification 'start' -> WASAPI output 'Realtek Digital Output'` logged from the Preview button with the selector set; WaveOut fallback tested. |
 | Manual folder entry | Editable field + Save/Enter/LostFocus; `RecordingFolderResolver` tests cover empty, relative, absolute and environment-variable paths. |
 | 33 languages | `LanguageTests` verifies all 33 embedded packs, native names, Arabic RTL, English fallback, portable overrides; German/Chinese/Arabic UI captured. |
 | Crash recovery on real audio | Process killed mid-recording; next launch rebuilt `2026-11-26_06-54-49_RECOVERED.wav` from the 353,580-byte part and indexed it as Recovered. |
-| Input signal diagnosis | During this session the ATR2100x endpoint delivered near-silence to NAudio (`WasapiRecorder` and `WasapiCapture`) and to FFmpeg DirectShow (peak ≈ -65 dBFS) while unmuted at 80 %; the app’s in-app test reports “No signal detected”, so the remaining check is the microphone’s hardware gain/mute and Windows input level. |
+| Input signal diagnosis (historical) | Before the queue fix the ATR2100x endpoint appeared near-silent because the ring buffer wrote at the read cursor. After the fix the same endpoint produced peak 13925 / RMS 1537; the in-app test now distinguishes real silence from an engine failure. |

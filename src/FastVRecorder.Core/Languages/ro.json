@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Redenumirea a eșuat: ",
     "Msg.Mp3FailedWavKept": "Codificarea MP3 a eșuat; fisierul WAV a fost pastrat.",
     "Msg.NothingToOpen": "Nicio înregistrare de deschis încă.",
-    "Msg.RecordingIncomplete": "Salvat, dar înregistrarea poate fi incompletă: "
+    "Msg.RecordingIncomplete": "Salvat, dar înregistrarea poate fi incompletă: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

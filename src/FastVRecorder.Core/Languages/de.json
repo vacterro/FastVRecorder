@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Umbenennen fehlgeschlagen: ",
     "Msg.Mp3FailedWavKept": "MP3-Kodierung fehlgeschlagen; Die WAV-Datei wurde beibehalten.",
     "Msg.NothingToOpen": "Noch keine Aufnahme zum Öffnen.",
-    "Msg.RecordingIncomplete": "Gespeichert, aber die Aufnahme ist möglicherweise unvollständig: "
+    "Msg.RecordingIncomplete": "Gespeichert, aber die Aufnahme ist möglicherweise unvollständig: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

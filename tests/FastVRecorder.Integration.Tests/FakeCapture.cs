@@ -7,11 +7,16 @@ namespace FastVRecorder.Integration.Tests;
 public sealed class FakeCaptureSource : IAudioCaptureSource
 {
     private readonly SourceFormat _format;
+    private readonly bool _emitData;
     private Thread? _thread;
     private volatile bool _running;
     private bool _stoppedRaised;
 
-    public FakeCaptureSource(SourceFormat format) => _format = format;
+    public FakeCaptureSource(SourceFormat format, bool emitData = true)
+    {
+        _format = format;
+        _emitData = emitData;
+    }
 
     public event CaptureAudioHandler? DataAvailable;
     public event Action<Exception?>? Stopped;
@@ -46,7 +51,7 @@ public sealed class FakeCaptureSource : IAudioCaptureSource
 
         while (_running)
         {
-            DataAvailable?.Invoke(buffer);
+            if (_emitData) DataAvailable?.Invoke(buffer);
             Thread.Sleep(20);
         }
     }
@@ -66,6 +71,22 @@ public sealed class FakeCaptureSource : IAudioCaptureSource
         }
     }
 
+    /// <summary>Simulates a device loss and reports the failure to the engine.</summary>
+    public void Fail(Exception exception)
+    {
+        _running = false;
+        if (_thread is not null && _thread != Thread.CurrentThread)
+        {
+            _thread.Join(1000);
+        }
+
+        if (!_stoppedRaised)
+        {
+            _stoppedRaised = true;
+            Stopped?.Invoke(exception);
+        }
+    }
+
     public void Dispose() => Stop();
 }
 
@@ -73,14 +94,17 @@ public sealed class FakeCaptureFactory : IAudioCaptureFactory
 {
     private readonly SourceFormat _format;
     private readonly bool _fail;
+    private readonly bool _emitData;
 
-    public FakeCaptureFactory(SourceFormat format, bool fail = false)
+    public FakeCaptureFactory(SourceFormat format, bool fail = false, bool emitData = true)
     {
         _format = format;
         _fail = fail;
+        _emitData = emitData;
     }
 
     public int Created { get; private set; }
+    public FakeCaptureSource? Last { get; private set; }
 
     public IAudioCaptureSource? TryCreate(string? deviceId, out string? error)
     {
@@ -92,6 +116,7 @@ public sealed class FakeCaptureFactory : IAudioCaptureFactory
 
         Created++;
         error = null;
-        return new FakeCaptureSource(_format);
+        Last = new FakeCaptureSource(_format, _emitData);
+        return Last;
     }
 }

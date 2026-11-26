@@ -87,6 +87,17 @@ public sealed class HotkeyTests
     }
 
     [Fact]
+    public void AltGrRisk_FlagsCtrlAltLettersButNotFunctionKeys()
+    {
+        Assert.True(HotkeyValidator.IsAltGrRisk(new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x4C)));
+        Assert.True(HotkeyValidator.IsAltGrRisk(new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x30)));
+        Assert.False(HotkeyValidator.IsAltGrRisk(new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 0x74)));
+        Assert.False(HotkeyValidator.IsAltGrRisk(new HotkeyGesture(HotkeyModifiers.Alt, 0x30)));
+        Assert.False(HotkeyValidator.IsAltGrRisk(new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Shift, 0x4C)));
+        Assert.False(HotkeyValidator.IsAltGrRisk(default));
+    }
+
+    [Fact]
     public void Defaults_ContainEveryActionExactlyOnce()
     {
         Assert.Equal(Enum.GetValues<HotkeyAction>().Length, HotkeyDefaults.All.Count);

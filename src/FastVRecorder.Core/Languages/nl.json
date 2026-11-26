@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Hernoemen mislukt: ",
     "Msg.Mp3FailedWavKept": "MP3-codering mislukt; het WAV-bestand werd bewaard.",
     "Msg.NothingToOpen": "Er is nog geen opname om te openen.",
-    "Msg.RecordingIncomplete": "Opgeslagen, maar de opname is mogelijk onvolledig: "
+    "Msg.RecordingIncomplete": "Opgeslagen, maar de opname is mogelijk onvolledig: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

@@ -213,6 +213,11 @@
     "Msg.RenameFailed": "Η μετονομασία απέτυχε: ",
     "Msg.Mp3FailedWavKept": "Η κωδικοποίηση MP3 απέτυχε. το αρχείο WAV διατηρήθηκε.",
     "Msg.NothingToOpen": "Δεν υπάρχει εγγραφή για άνοιγμα ακόμα.",
-    "Msg.RecordingIncomplete": "Αποθηκεύτηκε, αλλά η εγγραφή μπορεί να είναι ελλιπής: "
+    "Msg.RecordingIncomplete": "Αποθηκεύτηκε, αλλά η εγγραφή μπορεί να είναι ελλιπής: ",
+    "Hist.RetryRecovery": "Retry recovery",
+    "Keys.AltGrWarning": "Ctrl+Alt is AltGr on some keyboard layouts and may block typing. Choose another shortcut if needed.",
+    "Hist.Rescan": "Rescan folder",
+    "Hist.RescanDone": "Recordings indexed:",
+    "Hist.RescanFailed": "Folder rescan failed:"
   }
 }

@@ -61,6 +61,29 @@ public sealed class HistoryStore
         lock (_lock) return _entries.OrderByDescending(e => e.CreatedLocal).FirstOrDefault();
     }
 
+    /// <summary>
+    /// Latest recording that actually exists, ordered by file write time (stable under clock
+    /// rollback), with creation time as tie-breaker. Missing index entries are skipped.
+    /// </summary>
+    public HistoryEntry? LatestExisting()
+    {
+        List<HistoryEntry> copy;
+        lock (_lock) copy = _entries.ToList();
+        return copy
+            .Where(e =>
+            {
+                try { return File.Exists(e.Path); }
+                catch { return false; }
+            })
+            .OrderByDescending(e =>
+            {
+                try { return File.GetLastWriteTimeUtc(e.Path); }
+                catch { return DateTime.MinValue; }
+            })
+            .ThenByDescending(e => e.CreatedLocal)
+            .FirstOrDefault();
+    }
+
     public void Add(HistoryEntry entry)
     {
         lock (_lock)
@@ -75,6 +98,31 @@ public sealed class HistoryStore
             }
         }
         Save();
+    }
+
+    /// <summary>Adds a batch of existing files in one save. Returns how many new paths were added.</summary>
+    public int AddRange(IEnumerable<HistoryEntry> entries)
+    {
+        var added = 0;
+        lock (_lock)
+        {
+            foreach (var entry in entries)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Path)) continue;
+                if (_entries.Any(e => string.Equals(e.Path, entry.Path, StringComparison.OrdinalIgnoreCase))) continue;
+                _entries.Add(entry);
+                added++;
+            }
+
+            if (_entries.Count > MaxEntries)
+            {
+                var removable = _entries.Where(e => !e.Pinned).OrderBy(e => e.CreatedLocal).Take(_entries.Count - MaxEntries).ToList();
+                foreach (var r in removable) _entries.Remove(r);
+            }
+        }
+
+        if (added > 0) Save();
+        return added;
     }
 
     public void Remove(string path)
@@ -114,17 +162,22 @@ public sealed class HistoryStore
 
     public void Save()
     {
-        string text;
-        lock (_lock) text = JsonSerializer.Serialize(_entries, Json);
-        try
+        lock (_lock)
         {
-            AtomicFile.WriteAllText(_path, text);
-            LastSaveError = null;
+            // Serialize and write while holding the same lock so a slower older snapshot can
+            // never overwrite a newer one.
+            try
+            {
+                var text = JsonSerializer.Serialize(_entries, Json);
+                AtomicFile.WriteAllText(_path, text);
+                LastSaveError = null;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                LastSaveError = ex.Message;
+            }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            LastSaveError = ex.Message;
-        }
+
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }
