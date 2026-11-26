@@ -1,0 +1,30 @@
+{
+  "blocking_findings": {
+    "problem_count": 0,
+    "problems": [],
+    "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+    "ruleset_version": 2,
+    "status": "complete",
+    "warning_count": 2
+  },
+  "board_hash": "337f0f11407f7dd1",
+  "canonical_next_command": null,
+  "content_hash": "40b6a95bd78ed293",
+  "exit_code": 0,
+  "external_actions": [],
+  "gate": "core",
+  "install_fingerprint": "install-v1:a4952cdcc6421b1a4d9dc884eae0f7cded180e7c241f475863e31e9566adbb6b",
+  "install_home": "C:\\Users\\vac34\\AppData\\Local\\saipen\\scheduled-source",
+  "kind": "conformance_receipt",
+  "log_hash": "5791be14eb59dd3f",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "receipt_id": "receipt-3befdec77539",
+  "remediation_commands": [],
+  "schema_version": 2,
+  "source_head": "c49e6aba0c9ee028de5061a5c86930ea1e288298",
+  "source_tree_fingerprint": "git-delta-v1:c66baf69a8306f3b95dfc7badb5f72b088f8de8408e933efadc4d149721a1195",
+  "state_hash": "5b512a0ffeba3dea",
+  "timestamp_utc": "2026-11-26T07:04:53.365013Z",
+  "validator_protocol_version": "1",
+  "verdict": "PASS"
+}

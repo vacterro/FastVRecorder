@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-006:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-8 closed with verification evidence in LOG: verify -> PASS [target: T-8] conf: high -- declared suite PASS (87 Core + 36 Integration = 123/123); publish-safety 42/42; clean zip FastVRecorder-0.0.2-win-x64.zip SHA256 38A1BA67EB86318547FF7976508C2BEEB31C490F3E363C10EABC025058F779BB extracted and recorded 3.08 s Success; MP3 10.104 s decode; crash recovery 4.49 s rebuilt in 3.35 s; real Ctrl+Alt+L, Alt+0, Shift+Alt+0 verified; origin main c49e",
+      "text": "harden FastVRecorder data safety, recovery, writer ownership and release per SAIHANDOFF-2",
+      "verification": "the Work this request created reached its own verification gate; see the T-8 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-8"
+    }
+  },
+  "schema_version": 1
+}

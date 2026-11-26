@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-006:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "harden FastVRecorder data safety, recovery, writer ownership and release per SAIHANDOFF-2"
+    }
+  },
+  "derived_at": "2026-11-26T07:06:36Z",
+  "derived_from": "SRC-006",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "66f1e224d52b00451a57ada0a568bb9fbf5db0ef3574e1cf7b31fe1ae5448f9d"
+}

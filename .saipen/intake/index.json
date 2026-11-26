@@ -1,6 +1,6 @@
 {
   "active": {},
-  "next_id": 6,
+  "next_id": 7,
   "schema_version": 1,
   "tombstones": {
     "SRC-001": {
@@ -80,6 +80,22 @@
       "requirements": 1,
       "schema_version": 1,
       "source_sha256": "7dcd144ad9b54f2febe3ff13afd3e287af6f7b21b918051a4f01cf4e1b553ad5",
+      "status": "CLOSED",
+      "unresolved": 0
+    },
+    "SRC-006": {
+      "actionable": 1,
+      "archive_ref": ".saipen/archive/source/SRC-006.md",
+      "closed_at": "2026-11-26T07:06:37Z",
+      "closure_event": null,
+      "linked_work": "T-8",
+      "linked_works": [
+        "T-8"
+      ],
+      "receipt_id": "SRC-006",
+      "requirements": 1,
+      "schema_version": 1,
+      "source_sha256": "66f1e224d52b00451a57ada0a568bb9fbf5db0ef3574e1cf7b31fe1ae5448f9d",
       "status": "CLOSED",
       "unresolved": 0
     }

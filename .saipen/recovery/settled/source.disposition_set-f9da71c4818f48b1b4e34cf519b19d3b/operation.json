@@ -1,0 +1,35 @@
+{
+  "op_id": "source.disposition_set-f9da71c4818f48b1b4e34cf519b19d3b",
+  "operation": "source.disposition_set",
+  "created_at": "2026-11-26T07:06:36Z",
+  "agent": "saipen",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "semantic_payload_hash": "bda696b4a9093777",
+  "preconditions": {
+    ".saipen/intake/coverage/SRC-006.json": "7b9f6274588aa6c3"
+  },
+  "read_preconditions": {
+    ".saipen/intake/active/SRC-006.meta.json": "85d311d2634439cf",
+    ".saipen/intake/contracts/SRC-006.json": "1f3da69facdf9f44"
+  },
+  "verification_policy": "core_fast",
+  "status": "COMMITTED",
+  "progress_index": 1,
+  "targets": [
+    {
+      "path": ".saipen/intake/coverage/SRC-006.json",
+      "role": "coverage",
+      "action": "write",
+      "before_hash": "7b9f6274588aa6c3",
+      "after_hash": "f49a9576d5f47839",
+      "applied": true
+    }
+  ],
+  "receipt_metadata": {
+    "receipt": "SRC-006",
+    "rid": "SRC-006:R001",
+    "disposition": "VERIFIED",
+    "work": "T-8"
+  }
+}
