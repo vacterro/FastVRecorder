@@ -95,7 +95,8 @@ no cloud upload, no background service, no database, and no network access.
 ### Hotkeys
 - Native `RegisterHotKey` + `MOD_NOREPEAT` on a message-only window; no keyboard polling, no
   low-level hook, no administrator rights.
-- Default: `Alt + 0` toggles recording. `Numpad 0` is a separate assignable combination.
+- Defaults: `Alt + 0` toggles recording; `Ctrl + Alt + L` opens and plays the last recording in
+  the Windows default player. `Numpad 0` is a separate assignable combination.
 - Global and local scopes; click-to-assign capture, Esc cancel, Clear, Reset, conflict status.
 - Assignments are transactional: Windows registration is attempted first and the previous working
   set is restored if the new combination is rejected. Reserved combinations (Win+L, Alt+Tab, …)
@@ -182,7 +183,7 @@ Startup-folder shortcut cannot be created by *Start with Windows*.
 
 ## Tests
 
-- `FastVRecorder.Core.Tests` (78 tests): naming/reservation, WAV header/writer/verifier, device
+- `FastVRecorder.Core.Tests` (79 tests): naming/reservation, WAV header/writer/verifier, device
   format conversion and resampling, settings atomicity/backup/corruption/migration, hotkey parsing
   and validation, theme contract, history index, journal.
 - `FastVRecorder.Integration.Tests` (24 tests): full engine start/stop with a deterministic fake
@@ -196,7 +197,8 @@ Run `scripts\Test.ps1`.
 
 | Setting | Value |
 |---|---|
-| Hotkey | `Alt + 0` |
+| Hotkey (toggle recording) | `Alt + 0` |
+| Hotkey (open & play last recording) | `Ctrl + Alt + L` |
 | Format | WAV PCM 16-bit |
 | Quality preset | Standard (48 kHz, mono) |
 | Recording folder | `<app>\Recordings` |

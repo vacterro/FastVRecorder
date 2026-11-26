@@ -29,6 +29,7 @@
 ## Features
 
 - **Record from anywhere:** press `Alt + 0` to start or stop, even when the app is in the tray.
+- **Hear it again:** `Ctrl + Alt + L` opens and plays the last recording in your default player.
 - **Your audio, your files:** WAV or MP3 (when the Windows encoder is available), timestamp or incremental names, and a configurable output folder.
 - **Built for interruptions:** recoverable partial files, periodic disk checkpoints and long-recording segmentation.
 - **Make it yours:** configurable global and local hotkeys, sound cues, microphone selection and optional Windows autostart.
