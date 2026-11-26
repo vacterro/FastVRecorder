@@ -986,6 +986,23 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Re-applies the parts of the document that live services cache after a settings reload
+    /// (theme, language, diagnostics, startup state). Does not write the document back.
+    /// </summary>
+    public void ApplyRuntimeSettings()
+    {
+        _theme.Apply(_s.Appearance.Theme);
+        _loc.SetLanguage(_s.Appearance.Language, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        _log.Enabled = _s.Advanced.DiagnosticsLog;
+        // The registry/shortcut is the live truth here; adopting it must not rewrite Windows
+        // state merely because a previously unreadable settings file became readable.
+        _s.Application.StartWithWindows = _startup.IsEnabled;
+        OnPropertyChanged(nameof(StartWithWindows));
+        OnPropertyChanged(nameof(AlwaysOnTop));
+        OnPropertyChanged(nameof(ShowTaskbarIcon));
+    }
+
+    /// <summary>
     /// Rebuilds the format picker. MP3 is offered when the background probe proved Media
     /// Foundation available, or while it is the saved choice (so the ComboBox binding never
     /// loses its selected item before the probe finishes).

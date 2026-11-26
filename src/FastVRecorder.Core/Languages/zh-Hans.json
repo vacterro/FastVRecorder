@@ -200,6 +200,7 @@
     "Msg.SavedTo": "已保存： ",
     "Msg.Recovered": "恢复的录音： ",
     "Msg.RecoveryFailed": "部分录音无法恢复： ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "录音未开始： ",
     "Msg.RecordFailed": "录制因错误而停止： ",
     "Msg.NoAudio": "没有录制任何音频。",

@@ -32,6 +32,9 @@ public sealed class HistoryStore
 
     public string? LastSaveError { get; private set; }
 
+    /// <summary>Test seam: exercise the retention path without writing thousands of entries.</summary>
+    internal int MaxEntriesLimit { get; set; } = MaxEntries;
+
     public event EventHandler? Changed;
 
     public void Load()
@@ -84,26 +87,43 @@ public sealed class HistoryStore
             .FirstOrDefault();
     }
 
-    public void Add(HistoryEntry entry)
+    public void Add(HistoryEntry entry) => TryAdd(entry);
+
+    /// <summary>
+    /// Adds or replaces one entry and reports whether the index reached the disk. Recovery uses the
+    /// result to keep retrying indexing: published audio must never depend on this write.
+    /// </summary>
+    public bool TryAdd(HistoryEntry entry)
     {
+        bool saved;
         lock (_lock)
         {
             _entries.RemoveAll(e => string.Equals(e.Path, entry.Path, StringComparison.OrdinalIgnoreCase));
             _entries.Add(entry);
-            if (_entries.Count > MaxEntries)
+            if (_entries.Count > MaxEntriesLimit)
             {
-                // Trim the index only (never touches files); pinned entries are kept.
-                var removable = _entries.Where(e => !e.Pinned).OrderBy(e => e.CreatedLocal).Take(_entries.Count - MaxEntries).ToList();
+                // Trim the index only (never touches files); pinned entries are kept, and the
+                // entry this call is adding is never the one evicted (otherwise the caller would
+                // be told "indexed" after a save that omitted it).
+                var removable = _entries.Where(e => !ReferenceEquals(e, entry) && !e.Pinned)
+                    .OrderBy(e => e.CreatedLocal)
+                    .Take(_entries.Count - MaxEntriesLimit)
+                    .ToList();
                 foreach (var r in removable) _entries.Remove(r);
             }
+
+            saved = SaveLocked();
         }
-        Save();
+
+        Changed?.Invoke(this, EventArgs.Empty);
+        return saved;
     }
 
     /// <summary>Adds a batch of existing files in one save. Returns how many new paths were added.</summary>
     public int AddRange(IEnumerable<HistoryEntry> entries)
     {
         var added = 0;
+        var addedEntries = new List<HistoryEntry>();
         lock (_lock)
         {
             foreach (var entry in entries)
@@ -111,12 +131,16 @@ public sealed class HistoryStore
                 if (string.IsNullOrWhiteSpace(entry.Path)) continue;
                 if (_entries.Any(e => string.Equals(e.Path, entry.Path, StringComparison.OrdinalIgnoreCase))) continue;
                 _entries.Add(entry);
+                addedEntries.Add(entry);
                 added++;
             }
 
-            if (_entries.Count > MaxEntries)
+            if (_entries.Count > MaxEntriesLimit)
             {
-                var removable = _entries.Where(e => !e.Pinned).OrderBy(e => e.CreatedLocal).Take(_entries.Count - MaxEntries).ToList();
+                var removable = _entries.Where(e => !addedEntries.Contains(e) && !e.Pinned)
+                    .OrderBy(e => e.CreatedLocal)
+                    .Take(_entries.Count - MaxEntriesLimit)
+                    .ToList();
                 foreach (var r in removable) _entries.Remove(r);
             }
         }
@@ -168,20 +192,41 @@ public sealed class HistoryStore
     {
         lock (_lock)
         {
-            // Serialize and write while holding the same lock so a slower older snapshot can
-            // never overwrite a newer one.
-            try
-            {
-                var text = JsonSerializer.Serialize(_entries, Json);
-                AtomicFile.WriteAllText(_path, text);
-                LastSaveError = null;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                LastSaveError = ex.Message;
-            }
+            SaveLocked();
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Writes the current index and reports whether it reached the disk.</summary>
+    public bool TrySave()
+    {
+        bool ok;
+        lock (_lock)
+        {
+            ok = SaveLocked();
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+        return ok;
+    }
+
+    /// <summary>Caller holds <see cref="_lock"/>. Returns false when the document did not reach disk.</summary>
+    private bool SaveLocked()
+    {
+        // Serialize and write while holding the same lock so a slower older snapshot can
+        // never overwrite a newer one.
+        try
+        {
+            var text = JsonSerializer.Serialize(_entries, Json);
+            AtomicFile.WriteAllText(_path, text);
+            LastSaveError = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            LastSaveError = ex.Message;
+            return false;
+        }
     }
 }

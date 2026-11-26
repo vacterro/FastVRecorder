@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Salvestatud: ",
     "Msg.Recovered": "Taastatud salvestus(ed): ",
     "Msg.RecoveryFailed": "Mõnda osalist salvestust ei õnnestunud taastada: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Salvestamine ei alanud: ",
     "Msg.RecordFailed": "Salvestamine peatati veaga: ",
     "Msg.NoAudio": "Heli ei salvestatud.",

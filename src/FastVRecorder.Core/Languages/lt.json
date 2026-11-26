@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Išsaugota: ",
     "Msg.Recovered": "Atkurtas (-i) įrašas (-ai): ",
     "Msg.RecoveryFailed": "Kai kurių dalinių įrašų nepavyko atkurti: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Įrašymas neprasidėjo: ",
     "Msg.RecordFailed": "Įrašymas sustabdytas dėl klaidos: ",
     "Msg.NoAudio": "Garso įrašas nebuvo įrašytas.",

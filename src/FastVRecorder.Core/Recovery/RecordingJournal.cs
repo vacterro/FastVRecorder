@@ -23,7 +23,11 @@ public sealed class JournalEntry
 /// </summary>
 public sealed class RecordingJournal
 {
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+    };
     private readonly string _path;
     private readonly object _lock = new();
     private List<JournalEntry> _entries;
@@ -46,7 +50,7 @@ public sealed class RecordingJournal
     {
         lock (_lock)
         {
-            _entries.RemoveAll(e => string.Equals(e.PartPath, entry.PartPath, StringComparison.OrdinalIgnoreCase));
+            _entries.RemoveAll(e => SamePath(e.PartPath, entry.PartPath));
             _entries.Add(entry);
             SaveLocked();
         }
@@ -56,10 +60,24 @@ public sealed class RecordingJournal
     {
         lock (_lock)
         {
-            if (_entries.RemoveAll(e => string.Equals(e.PartPath, partPath, StringComparison.OrdinalIgnoreCase)) > 0)
+            if (_entries.RemoveAll(e => SamePath(e.PartPath, partPath)) > 0)
             {
                 SaveLocked();
             }
+        }
+    }
+
+    /// <summary>Journal entries may be stored absolute or relative; aliases are the same file.</summary>
+    private static bool SamePath(string left, string right)
+    {
+        if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase)) return true;
+        try
+        {
+            return string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
         }
     }
 

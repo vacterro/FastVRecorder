@@ -1,4 +1,4 @@
-# FastVRecorder 0.0.4 — User and technical guide
+# FastVRecorder 0.0.5 — User and technical guide
 
 [Back to project overview](../README.md)
 
@@ -59,8 +59,16 @@ no cloud upload, no background service, no database, and no network access.
 - On the next launch the app scans the recording folder and its journal
   (`config/active-recordings.json`), rebuilds `<name>_RECOVERED.wav`, verifies the header and reads
   frames back with NAudio, then indexes it in History as **Recovered**.
-- The damaged `.part` is never deleted; unreadable parts are kept for diagnosis and marked with a
-  `.unrecoverable.json` sidecar. Recovery is idempotent.
+- Ownership is checked with Windows file sharing before touching a part: a writer that is still
+  open (including paused, buffered or on slow storage, in another process or Windows session) is
+  skipped. Coordinators serialize on a per-folder lease; if ownership cannot be proven the scan is
+  reported as skipped instead of running unprotected.
+- The damaged `.part` is never deleted; unreadable parts are kept for diagnosis and marked with an
+  identity-bound `.unrecoverable.json` receipt. A repaired/changed part is retried automatically,
+  **Retry Recovery** bypasses a matching receipt, and transient I/O never becomes permanent.
+- If the History write fails, the recovered WAV is still kept and the journal entry stays so the
+  index is retried on the next launch. Recovery is idempotent and adopts verified
+  `_RECOVERED*.wav` siblings, so a crash mid-transaction never duplicates audio.
 - The recovery scan only drops an incomplete trailing sample frame; no silent corruption, no
   invented success.
 
@@ -79,6 +87,12 @@ no cloud upload, no background service, no database, and no network access.
   `settings.json.bak` copy of the previous valid document.
 - Missing fields keep their defaults; malformed sections fall back individually; a fully corrupt
   document is preserved as `settings.json.corrupt` and defaults are used.
+- A settings file that is merely locked/unreadable is never treated as corruption or overwritten.
+  A newer valid document written by another process after startup is kept and the save is refused
+  with a message until restart.
+- When previously unreadable settings become readable, the live app re-reads, adopts and applies
+  theme, language, diagnostics, startup state, hotkeys, devices, tray and window bindings before
+  saving. A mid-recording reload cannot change the microphone used by pause/resume.
 - Auto-save (no Apply button); import/export/reset in Advanced; read-only portable folders are
   detected and reported instead of silently redirecting settings to AppData.
 - Every path is resolved relative to the executable folder, never the process working directory.

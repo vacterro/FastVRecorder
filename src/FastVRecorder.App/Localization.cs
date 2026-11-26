@@ -40,10 +40,9 @@ public sealed class Loc : INotifyPropertyChanged
         var resolved = LanguageCatalog.Resolve(setting, systemLanguage).Code;
         if (string.Equals(_language, resolved, StringComparison.OrdinalIgnoreCase)) return;
         _language = resolved;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Language)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRussian)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRightToLeft)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FlowDirection)));
+        // An empty property name invalidates every binding (indexer, Language, IsRussian,
+        // IsRightToLeft, FlowDirection) with one notification. Five separate notifications made
+        // one language switch rebuild the device list and re-register every hotkey five times.
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
 }

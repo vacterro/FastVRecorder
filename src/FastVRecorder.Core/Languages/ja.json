@@ -200,6 +200,7 @@
     "Msg.SavedTo": "保存済み: ",
     "Msg.Recovered": "回復された録音: ",
     "Msg.RecoveryFailed": "一部の部分的な録音は復元できませんでした: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "録音が開始されませんでした: ",
     "Msg.RecordFailed": "記録がエラーで停止しました: ",
     "Msg.NoAudio": "音声は録音されていませんでした。",

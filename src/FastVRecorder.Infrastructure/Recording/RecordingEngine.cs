@@ -40,6 +40,7 @@ public sealed class RecordingEngine : IDisposable
     private WavStreamWriter? _writer;
     private ReservedTarget? _target;
     private TargetFormat _targetFormat = TargetFormat.Standard;
+    private string _captureDeviceId = string.Empty;
     private SourceFormat _sourceFormat;
     private OutputFormat _outputFormat;
     private int _mp3Kbps;
@@ -252,6 +253,8 @@ public sealed class RecordingEngine : IDisposable
             _outputFormat = settings.Recording.Format;
             _mp3Kbps = settings.Recording.Mp3BitrateKbps;
             _targetFormat = settings.Recording.EffectiveFormat();
+            // A settings reload while recording must not swap the microphone on resume.
+            _captureDeviceId = settings.Recording.DeviceId;
             FormatText = settings.Recording.DescribeOutput();
             _startedLocal = DateTime.Now;
             _recordingId = Guid.NewGuid().ToString("N");
@@ -938,7 +941,7 @@ public sealed class RecordingEngine : IDisposable
     {
         try
         {
-            _history.Add(new HistoryEntry
+            var entry = new HistoryEntry
             {
                 Path = path,
                 CreatedLocal = _startedLocal,
@@ -947,7 +950,11 @@ public sealed class RecordingEngine : IDisposable
                 Format = format,
                 Recovered = false,
                 Note = note,
-            });
+            };
+            if (!_history.TryAdd(entry))
+            {
+                _log.Error("The recording is saved but its History entry could not be persisted: " + path + " - " + _history.LastSaveError);
+            }
         }
         catch (Exception ex)
         {
@@ -1136,8 +1143,7 @@ public sealed class RecordingEngine : IDisposable
 
     private void ResumeCapture()
     {
-        var settings = _settings();
-        var source = _captureFactory.TryCreate(settings.Recording.DeviceId, out var captureError)
+        var source = _captureFactory.TryCreate(_captureDeviceId, out var captureError)
             ?? throw new InvalidOperationException(captureError ?? "The microphone is no longer available.");
         var format = source.SourceFormat;
         if (format != _sourceFormat)

@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Spremljeno: ",
     "Msg.Recovered": "Oporavljene snimke: ",
     "Msg.RecoveryFailed": "Neke djelomične snimke nije bilo moguće vratiti: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Snimanje nije počelo: ",
     "Msg.RecordFailed": "Snimanje zaustavljeno uz grešku: ",
     "Msg.NoAudio": "Zvuk nije snimljen.",

@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Desat: ",
     "Msg.Recovered": "Enregistraments recuperats: ",
     "Msg.RecoveryFailed": "No s'han pogut recuperar algunes gravacions parcials: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "La gravació no ha començat: ",
     "Msg.RecordFailed": "La gravació s'ha aturat amb un error: ",
     "Msg.NoAudio": "No s'ha gravat cap àudio.",

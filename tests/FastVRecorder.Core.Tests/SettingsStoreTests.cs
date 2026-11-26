@@ -403,4 +403,74 @@ public sealed class SettingsStoreTests : TempDirectoryTest
         Assert.NotNull(backup);
         Assert.Equal("Recording", backup!.Files.Prefix);
     }
+
+    [Fact]
+    public void ExternalValidChangeAfterLoad_IsNotOverwrittenByAStaleSave()
+    {
+        var writer = new SettingsStore(SettingsPath);
+        var original = new AppSettings();
+        original.Files.Prefix = "Original";
+        Assert.True(writer.Save(original));
+
+        var liveStore = new SettingsStore(SettingsPath);
+        var live = liveStore.Load();
+        Assert.Equal("Original", live.Files.Prefix);
+
+        var external = new AppSettings();
+        external.Files.Prefix = "ExternalNewer";
+        File.WriteAllText(SettingsPath, SettingsStore.Serialize(external));
+
+        live.Files.Prefix = "StaleInMemory";
+        Assert.False(liveStore.Save(live));
+        Assert.Contains("changed by another process", liveStore.LastSaveError, StringComparison.OrdinalIgnoreCase);
+
+        var persisted = SettingsStore.Deserialize(File.ReadAllText(SettingsPath));
+        Assert.NotNull(persisted);
+        Assert.Equal("ExternalNewer", persisted!.Files.Prefix);
+    }
+
+    [Fact]
+    public void ConsecutiveSavesFromTheSameStoreAreAllowed()
+    {
+        var store = new SettingsStore(SettingsPath);
+        store.Load();
+        var settings = new AppSettings();
+        settings.Files.Prefix = "One";
+        Assert.True(store.Save(settings));
+        Assert.True(store.Save(settings));
+
+        settings.Files.Prefix = "Two";
+        Assert.True(store.Save(settings));
+        var persisted = SettingsStore.Deserialize(File.ReadAllText(SettingsPath));
+        Assert.Equal("Two", persisted!.Files.Prefix);
+    }
+
+    [Fact]
+    public void ExternalMalformedChangeKeepsTheLastValidBackup()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var first = new AppSettings();
+        first.Files.Prefix = "First";
+        Assert.True(store.Save(first));
+        var second = new AppSettings();
+        second.Files.Prefix = "Second";
+        Assert.True(store.Save(second));
+        var third = new AppSettings();
+        third.Files.Prefix = "Third";
+        Assert.True(store.Save(third));
+
+        var liveStore = new SettingsStore(SettingsPath);
+        var live = liveStore.Load();
+        Assert.Equal("Third", live.Files.Prefix);
+        File.WriteAllText(SettingsPath, "this is not json");
+
+        live.Files.Prefix = "Recovered";
+        Assert.True(liveStore.Save(live));
+
+        var backup = SettingsStore.Deserialize(File.ReadAllText(SettingsPath + ".bak"));
+        Assert.NotNull(backup);
+        Assert.Equal("Second", backup!.Files.Prefix);
+        var primary = SettingsStore.Deserialize(File.ReadAllText(SettingsPath));
+        Assert.Equal("Recovered", primary!.Files.Prefix);
+    }
 }

@@ -200,6 +200,7 @@
     "Msg.SavedTo": "저장됨: ",
     "Msg.Recovered": "복구된 녹음: ",
     "Msg.RecoveryFailed": "일부 부분 녹음을 복구할 수 없습니다: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "녹음이 시작되지 않았습니다: ",
     "Msg.RecordFailed": "오류로 인해 녹음이 중지되었습니다. ",
     "Msg.NoAudio": "오디오가 녹음되지 않았습니다.",

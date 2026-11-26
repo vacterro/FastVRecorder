@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -312,6 +313,12 @@ public sealed class SettingsStore
     private bool _suppressBackupOnce;
     private bool _primaryWasMissingAtLoad;
 
+    /// <summary>Hash of the primary document this store last read or wrote. Used to notice a newer
+    /// settings document written by another process before a stale in-memory copy overwrites it.</summary>
+    private string? _lastDiskTextHash;
+
+    private static string HashText(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+
     public static string Serialize(AppSettings s) => JsonSerializer.Serialize(s, Options);
 
     public static AppSettings? Deserialize(string json)
@@ -383,6 +390,9 @@ public sealed class SettingsStore
             BackupState = backup.State;
             _primaryWasMissingAtLoad = primary.State == SettingsFileState.Missing;
             _suppressBackupOnce = false;
+            _lastDiskTextHash = primary.State == SettingsFileState.Readable && primary.Text is not null
+                ? HashText(primary.Text)
+                : null;
 
             if (primary.State == SettingsFileState.Missing && backup.State == SettingsFileState.Missing)
             {
@@ -623,13 +633,46 @@ public sealed class SettingsStore
                 return false;
             }
 
+            // Another process may have written a newer valid document after this store read the
+            // file. A stale in-memory copy must not silently replace it; the user has to restart
+            // so the newest document (and its backup) are adopted instead.
+            var keepBackup = !_suppressBackupOnce;
+            if (_lastDiskTextHash is not null)
+            {
+                var current = TryReadState(FilePath);
+                if (current.State == SettingsFileState.Readable && current.Text is not null)
+                {
+                    if (!string.Equals(HashText(current.Text), _lastDiskTextHash, StringComparison.Ordinal))
+                    {
+                        if (Deserialize(current.Text) is not null || DeserializeLenient(current.Text, out _) is not null)
+                        {
+                            LastSaveError =
+                                "settings.json was changed by another process after FastVRecorder loaded it. The newer on-disk settings were kept; restart FastVRecorder to apply them.";
+                            return false;
+                        }
+
+                        // An externally damaged primary is not allowed to rotate into the last
+                        // valid backup: overwrite it directly and keep the existing .bak.
+                        keepBackup = false;
+                    }
+                }
+                else if (current.State != SettingsFileState.Missing && current.State != SettingsFileState.Readable)
+                {
+                    LastSaveError =
+                        "settings.json cannot be read right now; refusing to overwrite it. Resolve the access problem and restart FastVRecorder.";
+                    return false;
+                }
+            }
+
+            var json = Serialize(settings);
             try
             {
                 // After a damaged/partial load the next write must not rotate the damaged
                 // primary into the backup slot: that would destroy the last valid document.
-                AtomicFile.WriteAllText(FilePath, Serialize(settings), keepBackup: !_suppressBackupOnce);
+                AtomicFile.WriteAllText(FilePath, json, keepBackup: keepBackup);
                 _suppressBackupOnce = false;
                 _primaryWasMissingAtLoad = false;
+                _lastDiskTextHash = HashText(json);
                 PrimaryState = SettingsFileState.Readable;
                 LastSaveError = null;
                 return true;

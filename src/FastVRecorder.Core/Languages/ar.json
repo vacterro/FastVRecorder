@@ -200,6 +200,7 @@
     "Msg.SavedTo": "تم الحفظ: ",
     "Msg.Recovered": "التسجيل (التسجيلات) المستردة: ",
     "Msg.RecoveryFailed": "لا يمكن استرداد بعض التسجيلات الجزئية: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "لم يبدأ التسجيل: ",
     "Msg.RecordFailed": "توقف التسجيل بسبب خطأ: ",
     "Msg.NoAudio": "لم يتم تسجيل أي صوت.",

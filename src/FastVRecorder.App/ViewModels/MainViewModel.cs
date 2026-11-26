@@ -258,7 +258,14 @@ public sealed class MainViewModel : ObservableObject
             var discovered = await Task.Run(() => DiscoverRecordings(folder, known));
             var added = _history.AddRange(discovered);
             History.Refresh();
-            ShowBanner(_loc["Hist.RescanDone"] + " " + added, "info");
+            if (added > 0 && !string.IsNullOrWhiteSpace(_history.LastSaveError))
+            {
+                ShowBanner(_loc["Msg.HistorySaveFailed"] + _history.LastSaveError, "warning");
+            }
+            else
+            {
+                ShowBanner(_loc["Hist.RescanDone"] + " " + added, "info");
+            }
         }
         catch (Exception ex)
         {
@@ -507,9 +514,10 @@ public sealed class MainViewModel : ObservableObject
             // Adopt the re-read document into the live instance so every later save (including
             // the shutdown saves) persists the newest values instead of the stale in-memory copy.
             _settings.CopyFrom(reloaded);
-            Settings.RefreshFromSettings();
+            OnSettingsReloaded();
             if (_store.Save(_settings))
             {
+                _log.Info("settings.json was re-read after access was restored; the reloaded document was adopted and saved.");
                 Settings.StorageWarning = _loc["Msg.SettingsReloaded"];
                 ShowBanner(Settings.StorageWarning, "info");
             }
@@ -528,7 +536,8 @@ public sealed class MainViewModel : ObservableObject
         }
         else
         {
-            Settings.StorageWarning = _store.CanSave ? _loc["Msg.SettingsReadOnly"] : _store.LastSaveError ?? _loc["Msg.SettingsReadOnly"];
+            Settings.StorageWarning = _store.LastSaveError ?? _loc["Msg.SettingsReadOnly"];
+            _log.Warn(Settings.StorageWarning);
             ShowBanner(Settings.StorageWarning, "warning");
         }
     }
@@ -640,6 +649,13 @@ public sealed class MainViewModel : ObservableObject
         ToggleRecordingCommand.RaiseCanExecuteChanged();
         PauseCommand.RaiseCanExecuteChanged();
         UpdateTray(rebuildMenu: true);
+        WarnIfHistorySaveFailed();
+    }
+
+    private void WarnIfHistorySaveFailed()
+    {
+        if (string.IsNullOrWhiteSpace(_history.LastSaveError)) return;
+        ShowBanner(_loc["Msg.HistorySaveFailed"] + _history.LastSaveError, "warning");
     }
 
     private void OnEngineError(RecordingErrorEventArgs e)
@@ -678,15 +694,18 @@ public sealed class MainViewModel : ObservableObject
         }
 
         UpdateTray(rebuildMenu: true);
+        WarnIfHistorySaveFailed();
     }
 
     private void OnSettingsReloaded()
     {
+        Settings.ApplyRuntimeSettings();
         Hotkeys.ReloadFromSettings(out var hotkeyError);
         if (hotkeyError is not null) ShowBanner(_loc["Msg.HotkeyConflict"] + hotkeyError, "warning");
         Settings.RefreshFromSettings();
         Recorder.RefreshAll();
         UpdateTray(rebuildMenu: true);
+        _log.Info("Reloaded settings were applied to the live window: theme, language, diagnostics, startup state, hotkeys and tray.");
     }
 
     private void OnLanguageChanged()

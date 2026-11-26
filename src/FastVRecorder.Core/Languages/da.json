@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Gemt: ",
     "Msg.Recovered": "Gendannet optagelse(r): ",
     "Msg.RecoveryFailed": "Nogle delvise optagelser kunne ikke gendannes: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Optagelsen startede ikke: ",
     "Msg.RecordFailed": "Optagelsen stoppede med en fejl: ",
     "Msg.NoAudio": "Der blev ikke optaget lyd.",

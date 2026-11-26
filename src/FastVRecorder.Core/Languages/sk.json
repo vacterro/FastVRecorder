@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Uložené: ",
     "Msg.Recovered": "Obnovené nahrávky: ",
     "Msg.RecoveryFailed": "Niektoré čiastočné nahrávky nebolo možné obnoviť: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Nahrávanie sa nezačalo: ",
     "Msg.RecordFailed": "Nahrávanie sa zastavilo s chybou: ",
     "Msg.NoAudio": "Nebol zaznamenaný žiadny zvuk.",

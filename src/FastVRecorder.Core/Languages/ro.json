@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Salvat: ",
     "Msg.Recovered": "Înregistrări recuperate: ",
     "Msg.RecoveryFailed": "Unele înregistrări parțiale nu au putut fi recuperate: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Înregistrarea nu a început: ",
     "Msg.RecordFailed": "Înregistrarea s-a oprit cu o eroare: ",
     "Msg.NoAudio": "Nu a fost înregistrat niciun sunet.",

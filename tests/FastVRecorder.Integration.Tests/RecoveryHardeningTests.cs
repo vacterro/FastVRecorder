@@ -129,25 +129,53 @@ public sealed class RecoveryHardeningTests : TempDirectoryTest
     }
 
     [Fact]
-    public void LockedPartialIsTransientKeepsJournalAndRetries()
+    public void HeldPartialIsTreatedAsALiveWriterAndRecoversAfterRelease()
     {
         var harness = CreateHarness();
         var part = CreatePartial(harness.Folder, "locked", 4800, out var metaPath);
         harness.Journal.Add(new JournalEntry { PartPath = part, MetaPath = metaPath, StartedUtc = DateTime.UtcNow });
 
         var service = new RecoveryService(harness.Paths, harness.Journal, harness.History, NullLog.Instance, () => harness.Settings);
-        using (new FileStream(part, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        using (new FileStream(part, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
         {
-            var lockedReport = service.RecoverAll();
-            Assert.Empty(lockedReport.Recovered);
-            Assert.NotEmpty(lockedReport.Failed);
+            // Exactly the writer's sharing mode: read allowed, write/delete denied. A paused or
+            // buffered writer holds the same handle and must never be snapshotted as stale.
+            var heldReport = service.RecoverAll();
+            Assert.Empty(heldReport.Recovered);
+            Assert.Empty(heldReport.Failed);
             Assert.Single(harness.Journal.Snapshot());
             Assert.False(File.Exists(Path.Combine(harness.Folder, "locked.wav.unrecoverable.json")));
+            Assert.Empty(Directory.GetFiles(harness.Folder, "*_RECOVERED.wav"));
         }
 
         var retry = service.RecoverAll();
         Assert.Single(retry.Recovered);
         Assert.Empty(harness.Journal.Snapshot());
+    }
+
+    [Fact]
+    public void LiveWriterWithoutRecentGrowthIsNotRecovered()
+    {
+        var harness = CreateHarness();
+        var part = CreatePartial(harness.Folder, "stalled-writer", 4800, out _);
+        var held = new FileStream(part, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+        try
+        {
+            // A writer stalled on slow storage or paused: no growth for a long time.
+            File.SetLastWriteTimeUtc(part, DateTime.UtcNow.AddHours(-1));
+            var lengthBefore = new FileInfo(part).Length;
+
+            var service = new RecoveryService(harness.Paths, harness.Journal, harness.History, NullLog.Instance, () => harness.Settings);
+            var report = service.RecoverAll();
+
+            Assert.Empty(report.Recovered);
+            Assert.Empty(Directory.GetFiles(harness.Folder, "*_RECOVERED.wav"));
+            Assert.Equal(lengthBefore, new FileInfo(part).Length);
+        }
+        finally
+        {
+            held.Dispose();
+        }
     }
 
     [Fact]

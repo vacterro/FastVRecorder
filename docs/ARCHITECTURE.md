@@ -127,17 +127,26 @@ At the next start the engine enters `Recovering` and `RecoveryService` scans:
 2. the configured recording folder and the default `Recordings` folder (depth-limited, skipping
    config/themes/media trees).
 
-For each part it parses the WAV header, computes the physically present whole frames, copies them
-through an owned `*.tmp-*` file into a new `<name>_RECOVERED.wav`, verifies the new header and
-reads frames back with `WaveFileReader`, then writes a `.recovered` marker, updates the recovery
-JSON, adds a History entry marked **Recovered** and removes the journal entry. The `.part` and
-every metadata-referenced file are preserved. A crash between publishing the recovered file and
-committing History/marker is repaired by adopting the already verified `_RECOVERED.wav`; a
-transient I/O failure keeps the journal entry for a later retry.
+For each part it first proves ownership: an exclusive `FileShare.None` open detects a writer
+(including a paused, buffered or storage-stalled one in another process/session) and a
+`.fastvrecorder-recovery.lock` lease serializes coordinators per destination folder. Only then
+does it parse the WAV header, compute the physically present whole frames, copy them through an
+owned `*.tmp-*` file into a new `<name>_RECOVERED.wav`, verify the new header and read frames back
+with `WaveFileReader`, then write a `.recovered` marker, update the recovery JSON, add a History
+entry marked **Recovered** and remove the journal entry. The `.part` and every metadata-referenced
+file are preserved. A crash between publishing the recovered file and committing History/marker is
+repaired by adopting any verified `_RECOVERED*.wav` sibling with the same PCM SHA-256; a transient
+I/O or History failure keeps the journal entry for a later retry, and the recovered WAV is kept.
+If the folder lease or ownership proof cannot be acquired, the scan is skipped and reported rather
+than run unprotected.
 
 If a part has no metadata, the header inside the part is enough. If the header is unusable or has
-no complete frames, the part is left alone and a `.unrecoverable.json` sidecar is written; later
-launches skip it. Recovery is idempotent: the marker prevents a second recovered copy.
+no complete frames, the part is left alone and a `.unrecoverable.json` receipt is written. The
+receipt is bound to the source's length, bounded first/last-1 MiB sample hash, header hash and
+last-write ticks; a repaired or rewritten file is re-evaluated, a malformed/identity-less legacy
+receipt is re-evaluated once, and **Retry Recovery** bypasses a matching receipt. Transient source
+or destination I/O never writes a permanent receipt. Recovery is idempotent: the marker or a
+PCM-verified adoption prevents a second recovered copy.
 
 ## Naming and reservation
 
@@ -165,13 +174,21 @@ Counters advance before the file is created, so a failed attempt never reuses a 
 3. backup;
 4. defaults, keeping the invalid primary as `settings.json.corrupt`.
 
+The store remembers the hash of the document it read or wrote. Before saving it re-reads the
+primary; a different, valid document written by another process is preserved and the save is
+refused until restart. A present-but-unreadable primary never counts as corruption and is never
+overwritten. When access is restored while the app is running, the reloaded document replaces the
+live one and is re-applied to the window (theme, language, diagnostics, startup state, hotkeys,
+tray) before the first save.
+
 `AppSettings.Normalize` repairs individual fields without resetting valid neighbours: clamps
 volume/interval/threshold, rejects unknown formats/themes/languages, removes duplicate or reserved
 hotkeys, and fills every missing hotkey action with its default.
 
 `HistoryStore` is a small JSON list (max 5000, pinned entries kept) with serialized atomic writes.
 Paths are absolute in the history index; missing files are detected on refresh and shown as
-**Missing**. Recovery and engine notes drive the Recovered/Incomplete labels.
+**Missing**. Recovery and engine notes drive the Recovered/Incomplete labels. `TryAdd`/`TrySave`
+report persistence; recovery keeps its journal entry and retries indexing when the write fails.
 
 ## Hotkeys
 

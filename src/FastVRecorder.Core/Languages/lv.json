@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Saglabāts: ",
     "Msg.Recovered": "Atkoptais ieraksts(-i): ",
     "Msg.RecoveryFailed": "Dažus daļējus ierakstus nevarēja atgūt: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Ieraksts netika sākts: ",
     "Msg.RecordFailed": "Ierakstīšana apturēta ar kļūdu: ",
     "Msg.NoAudio": "Audio netika ierakstīts.",

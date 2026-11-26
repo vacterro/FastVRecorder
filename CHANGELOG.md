@@ -2,6 +2,78 @@
 
 All notable changes to FastVRecorder are recorded here.
 
+## 0.0.5 — 2026-11-26
+
+Final stabilization pass (SAIHANDOFF-4): recovery ownership, durable indexing, receipt identity,
+settings reconciliation and reproducible packaging.
+
+### Recovery ownership
+- A live writer is now detected with the OS sharing rules instead of a 200 ms length-growth
+  heuristic. Recovery opens the `.wav.part` with `FileShare.None`; the recorder keeps it open with
+  `FileShare.Read`, so a paused, buffered or storage-stalled writer is still recognized and its
+  file is never snapshotted. Access-denied/unknown ownership also skips instead of guessing.
+- Recovery coordinators serialize on an exclusive per-folder lease file (OS-enforced, cross-session
+  and cross-installation). If the lease or the ownership proof cannot be acquired, the scan is
+  skipped and reported — never run unprotected. The previous `Global\` mutex could fail to be
+  created and silently continue scanning.
+- Journal entries must name a `.wav.part`; entries are normalized to full paths so relative
+  aliases are removed after recovery, and property names are read case-insensitively. A partial
+  that is itself a reparse point is refused. Journal paths outside the configured folder remain
+  supported (explicitly configured or moved storage).
+- The part file, its metadata and the original audio are still never deleted.
+
+### Durable History reconciliation
+- Recovered audio publication no longer depends on History persistence. History failures return a
+  result (`TryAdd`/`TrySave`), keep the journal entry, surface a warning and are retried on the
+  next launch without creating another recovered WAV.
+- A verified recovered output left by an interrupted transaction is adopted from any canonical
+  sibling (`_RECOVERED.wav`, `_RECOVERED_001.wav`, …) only when its PCM SHA-256 equals the part's
+  payload. History entries are added only when missing, so pins and metadata are preserved.
+- A recovery transaction is closed only when both indexing and a recovery receipt landed.
+  Index failures during recording, rename, delete and folder rescan are surfaced in the UI.
+
+### Unrecoverable receipts
+- Receipts are bound to the source's length, a bounded sample hash (first/last 1 MiB), the header
+  hash and the last-write ticks. A repaired header or rewritten audio at the same file length is
+  re-evaluated.
+- Malformed or identity-less legacy receipts no longer suppress audio forever; they are
+  re-evaluated once and rewritten. Destination-side verification/copy failures are transient and
+  never write a permanent receipt; unreadable sources are not classified as corrupt.
+- Explicit **Retry Recovery** bypasses matching receipts. A matching receipt still prevents
+  repeated parsing/work on genuinely unrecoverable files.
+
+### Settings and runtime
+- A valid newer `settings.json` written by another process after startup is never overwritten by a
+  stale in-memory copy; the save is refused with a clear message, the on-disk document and its
+  backup are preserved, and a restart adopts them.
+- When previously unreadable settings become readable, the reloaded document is adopted and
+  applied to the live window: theme, language, diagnostics, startup state, hotkeys, device list,
+  tray and window bindings — then saved. The shutdown save can no longer persist stale defaults.
+- A language switch emits one change notification instead of five, so one switch rebuilds the
+  device list and re-registers hotkeys once.
+- Pause/resume keeps the capture device snapshot taken at recording start; a settings reload
+  during an active recording cannot silently swap the microphone.
+
+### Packaging
+- New `scripts/Package.ps1` produces `release/FastVRecorder-<version>-win-x64.zip` from the verified
+  `publish-manifest.json` only: every file and hash is checked against the manifest, runtime data,
+  journals, partial/recovered files, logs and staging metadata are excluded, and the archive is
+  byte-identical on PowerShell 7 and Windows PowerShell 5.1 (ordinal entry order, fixed timestamps,
+  bsdtar). It updates `release/SHA256SUMS.txt` append-only.
+
+### Tests
+- 159 xUnit tests (101 Core + 58 Integration). New regressions cover held/paused writers, folder
+  lease contention, journal aliases, malformed/legacy/repaired receipts, forced retry, held
+  History saves with retry indexing, numbered interrupted outputs, and external settings edits.
+- Publish-safety suite unchanged at 139 assertions; verified on PowerShell 7 and 5.1.
+
+### Performance and environment
+- Warm startup 1.33–1.99 s to a visible window; working set ≈ 160 MB, private bytes ≈ 105 MB,
+  managed heap ≈ 13 MB, 23–25 threads, ≈ 860–880 handles, idle CPU 0.031 s per 30 s.
+- Real microphone acceptance remains NOT VERIFIED on this host: no default capture endpoint
+  (`Core Audio error 0x80070490`); the only enumeration entry is the system-default placeholder.
+  MP3/Media Foundation encoding is available (`available=True`).
+
 ## 0.0.4 — 2026-11-26
 
 Final reliability audit (SAIHANDOFF-3): publication trust, recovery identity and settings safety.

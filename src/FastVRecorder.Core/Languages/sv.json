@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Sparad: ",
     "Msg.Recovered": "Återställd(a) inspelning(er): ",
     "Msg.RecoveryFailed": "Vissa partiella inspelningar kunde inte återställas: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Inspelningen startade inte: ",
     "Msg.RecordFailed": "Inspelningen stoppades med ett fel: ",
     "Msg.NoAudio": "Inget ljud spelades in.",

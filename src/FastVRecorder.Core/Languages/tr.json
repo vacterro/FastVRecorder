@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Kaydedildi: ",
     "Msg.Recovered": "Kurtarılan kayıt(lar): ",
     "Msg.RecoveryFailed": "Bazı kısmi kayıtlar kurtarılamadı: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Kayıt başlamadı: ",
     "Msg.RecordFailed": "Kayıt bir hata nedeniyle durduruldu: ",
     "Msg.NoAudio": "Hiçbir ses kaydedilmedi.",

@@ -12,6 +12,22 @@ Status legend:
 The source body (`SRC-001.md`) is 1,043 lines and ends mid-sentence at the tray-menu block of
 section 16. All requirements in the captured body are covered below.
 
+## SAIHANDOFF-4 stabilization evidence (0.0.5)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Live/paused/stalled writer is never recovered | Done | OS `FileShare.None` ownership probe; `LiveWriterWithoutRecentGrowthIsNotRecovered`, held-writer test |
+| Recovery coordinators cannot publish duplicates | Done | exclusive per-folder lease; `AnotherCoordinatorHoldingTheFolderLeaseBlocksRecovery`, concurrent `RecoverAll` test |
+| Ownership failure is never silent | Done | lease failure yields `RecoveryFailure` and no output |
+| Journal paths/aliases | Done | `.wav.part` suffix required, full-path normalization, case-insensitive load; alias test |
+| Published audio survives History failure and is indexed later | Done | `HeldHistoryFileKeepsJournalAndIndexesOnRetry`, live reload test |
+| Interrupted/numbered recovered output is adopted without duplicates | Done | `NumberedRecoveredOutputFromInterruptedPublicationIsAdopted` |
+| Receipts are identity-bound and re-evaluated | Done | malformed/legacy/repaired-header/forced-retry tests; matching receipt avoids repeat work |
+| External newer settings are not overwritten | Done | `ExternalValidChangeAfterLoad_IsNotOverwrittenByAStaleSave`; live edit + close preserved SHA-256 |
+| Restored settings are applied live | Done | live lock/reload run: `settings: Unreadable` → re-read/saved; hotkeys, theme, language and tray applied |
+| Reproducible packaging | Done | `scripts/Package.ps1`: manifest-only, 343 entries, identical SHA-256 on PowerShell 7 and 5.1 |
+| Real hardware acceptance | Environment | No default capture endpoint: `Core Audio error 0x80070490`; only the system-default placeholder is enumerated |
+
 ## 0. Mission
 
 | Requirement | Status | Evidence |
@@ -259,11 +275,11 @@ section 16. All requirements in the captured body are covered below.
 | Item | Evidence |
 |---|---|
 | Solution builds in Release | `dotnet build FastVRecorder.sln -c Release` — success |
-| Automated tests | 97 core + 44 integration = **141 passed**, 0 failed |
+| Automated tests | 101 core + 58 integration = **159 passed**, 0 failed |
 | Portable publish | `scripts/Publish.ps1` → `dist/FastVRecorder` with self-contained `FastVRecorder.exe` |
 | UI smoke | live windows captured: Recorder, History, Hotkeys, Settings (all sections), Golden Default, Vintage Dark, English, Russian, System Default microphone, 35 % notification volume |
 | UI languages | 33 language packs (`LanguageTests`), native-name selector, Arabic RTL, portable overrides; 31 are machine-translated with English fallback |
-| Version | 0.0.4 (`Directory.Build.props`, UI footer, CHANGELOG) |
+| Version | 0.0.5 (`VERSION`, `Directory.Build.props`, UI footer, CHANGELOG) |
 | Real hardware capture | The published build recorded real multi-second WAV files from the ATR2100x-USB endpoint (48 kHz mono 16-bit, verified headers); after the queue fix a live recording contained peak 13925 / RMS 1537, not silence. |
 | Notification output | `Notification 'start' -> WASAPI output 'Realtek Digital Output'` logged from the Preview button with the selector set; WaveOut fallback tested. |
 | Manual folder entry | Editable field + Save/Enter/LostFocus; `RecordingFolderResolver` tests cover empty, relative, absolute and environment-variable paths. |
@@ -298,3 +314,27 @@ Historical hardware rows above describe earlier builds; they are not re-verified
 | Real hardware acceptance on 0.0.4 | NOT VERIFIED | this host exposes no capture endpoint (`No default capture endpoint: Core Audio error 0x80070490`, microphone list = 1 default placeholder); no physical recording was claimed |
 | Release artifact (0.0.4) | Built and verified | `release/FastVRecorder-0.0.4-win-x64.zip`, 71,205,871 bytes, SHA-256 `5C54590B68FC4CDB08C3547368ECA03FFE856F06BD4E5C2D1C04D2DD60210BEA`, 343 entries (342 manifest files + manifest); packaged strictly from manifest-owned files with hash verification; no `config/`, `Recordings/`, logs or `.fvr-update`; clean extraction launched in 1.45 s with a bogus `DOTNET_ROOT` (self-contained); app exe SHA-256 `D79917C6FAFB851995DAF5CEC420F109C32C7BC223C7338A3393E15C6CC032EA` |
 | Publication state | Pending by design | origin/main and tag publication are reconciled through the SAIPEN cohort workflow; no cohort release batch exists and no public GitHub Release was created |
+
+## 19. Final stabilization (0.0.5 / SAIHANDOFF-4)
+
+Scope: recovery ownership/concurrency, durable History reconciliation, unrecoverable receipt
+identity, runtime settings reconciliation, real-Windows acceptance, performance and reproducible
+packaging.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| A live writer is never recovered | Verified | `LiveWriterWithoutRecentGrowthIsNotRecovered`: a paused writer handle with an hour-old timestamp and no growth is skipped; `RecoverAll` proves ownership with `FileShare.None` and never falls back to the length heuristic |
+| Multiple coordinators cannot duplicate output | Verified | `AnotherCoordinatorHoldingTheFolderLeaseBlocksRecovery` reports the lease contention and produces no WAV; after release the scan recovers once; concurrent `RecoverAll` still yields one output |
+| Journal path validation/aliases | Verified | `JournalEntryWithoutPartSuffixIsIgnored`, `RelativeJournalAliasIsRemovedByTheRecoveryPath`, `JournalAcceptsCaseVariedPropertyNames`; external configured journal paths remain supported by the existing test |
+| Publication survives History failure | Verified | `HeldHistoryFileKeepsJournalAndIndexesOnRetry`: audio is published and reported, the journal stays, the in-memory index shows the entry, and the next scan persists it without a second WAV |
+| Interrupted/numbered output is adopted | Verified | `NumberedRecoveredOutputFromInterruptedPublicationIsAdopted` adopts `_RECOVERED_001.wav` by PCM identity and creates no base duplicate |
+| Receipt identity and retry | Verified | `MalformedUnrecoverableMarkerDoesNotHideRecoverableAudio`, `IdentityLessUnrecoverableMarkerIsReevaluatedOnce`, `RepairedHeaderAtTheSameLengthIsReevaluated`, `ExplicitRetryReevaluatesAMatchingUnrecoverableReceipt`, `MatchingReceiptAvoidsRepeatedPermanentWork` |
+| External settings are preserved | Verified | `ExternalValidChangeAfterLoad_IsNotOverwrittenByAStaleSave`; live run: externally edited prefix survived a close/save with identical SHA-256 |
+| Restored settings apply live | Verified | live locked-start run (`settings: Unreadable`) → unlock → close: log records re-read/save and the applied theme/language/diagnostics/startup/hotkeys/tray; stored `de`/`vintagedark` and `Alt+Shift+0` were loaded |
+| Reproducible package | Verified | `scripts/Package.ps1` on Windows PowerShell 5.1 and PowerShell 7 produced the same 343-entry ZIP and SHA-256; each file is checked against `publish-manifest.json`; runtime data/journals/logs/staging excluded |
+| Full suite | Verified | 159/159 in ≈ 9 s wall (101 Core ≈ 1 s, 58 Integration ≈ 6 s) |
+| Publish safety | Verified | 139/139 assertions on PowerShell 7 and Windows PowerShell 5.1; symlink cases skipped only when host privileges are absent and accounted for |
+| Performance | Measured | warm startup to visible window 1.33–1.99 s; WS ≈ 160 MB; private ≈ 105 MB; managed ≈ 13 MB; 23–25 threads; 860–880 handles; idle CPU 0.031 s / 30 s |
+| Real hardware acceptance on 0.0.5 | NOT VERIFIED — ENVIRONMENT LIMITATION | no default capture endpoint (`Core Audio error 0x80070490`); microphone enumeration = 1 system-default placeholder; MP3 available=True; pause/resume, hotkey recording and unplug/reconnect could not be exercised without a capture endpoint |
+| Release artifact (0.0.5) | Built and verified | `release/FastVRecorder-0.0.5-win-x64.zip`, 343 entries (342 manifest files + manifest); the final size and SHA-256 are recorded in `release/SHA256SUMS.txt`; packaged solely from `publish-manifest.json` with per-file hash verification; no `config/`, `Recordings/`, logs, journals, partial/recovered files or `.fvr-update`; clean extraction launched in 1.8–2.3 s (window-shown) with a bogus `DOTNET_ROOT`; artifact recovery rebuilt a real WAV and indexed it; externally edited settings survived a close/save with identical SHA-256 |
+| Publication state | Pending by design | source/tag push only through SHIP; no public GitHub Release or asset upload without explicit operator authorization |

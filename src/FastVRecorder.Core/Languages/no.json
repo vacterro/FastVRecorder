@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Lagret: ",
     "Msg.Recovered": "Gjenopprettet opptak(er): ",
     "Msg.RecoveryFailed": "Noen delvise opptak kunne ikke gjenopprettes: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Opptaket startet ikke: ",
     "Msg.RecordFailed": "Opptaket stoppet med en feil: ",
     "Msg.NoAudio": "Ingen lyd ble tatt opp.",

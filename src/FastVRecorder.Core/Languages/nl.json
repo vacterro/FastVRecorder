@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Opgeslagen: ",
     "Msg.Recovered": "Herstelde opname(s): ",
     "Msg.RecoveryFailed": "Sommige gedeeltelijke opnames konden niet worden hersteld: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "De opname is niet gestart: ",
     "Msg.RecordFailed": "Opname gestopt met een fout: ",
     "Msg.NoAudio": "Er is geen audio opgenomen.",

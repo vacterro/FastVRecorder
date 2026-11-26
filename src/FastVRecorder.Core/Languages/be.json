@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Захавана: ",
     "Msg.Recovered": "Адноўлены запіс(ы): ",
     "Msg.RecoveryFailed": "Не ўдалося аднавіць некаторыя частковыя запісы: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Запіс не пачаўся: ",
     "Msg.RecordFailed": "Запіс спынены з памылкай: ",
     "Msg.NoAudio": "Аўдыё не было запісана.",

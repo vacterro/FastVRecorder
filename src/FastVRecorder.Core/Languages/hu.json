@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Mentve: ",
     "Msg.Recovered": "Helyreállított felvétel(ek): ",
     "Msg.RecoveryFailed": "Néhány részleges felvételt nem sikerült visszaállítani: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "A felvétel nem indult el: ",
     "Msg.RecordFailed": "A rögzítés hibával leállt: ",
     "Msg.NoAudio": "Hangfelvétel nem készült.",

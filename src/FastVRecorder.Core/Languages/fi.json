@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Tallennettu: ",
     "Msg.Recovered": "Palautetut tallenteet: ",
     "Msg.RecoveryFailed": "Joitakin osittaisia tallenteita ei voitu palauttaa: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Tallennus ei alkanut: ",
     "Msg.RecordFailed": "Tallennus keskeytettiin virheestä: ",
     "Msg.NoAudio": "Ääntä ei tallennettu.",

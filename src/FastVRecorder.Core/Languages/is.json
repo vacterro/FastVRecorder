@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Vistað: ",
     "Msg.Recovered": "Endurheimt upptaka(r): ",
     "Msg.RecoveryFailed": "Ekki tókst að endurheimta sumar upptökur að hluta: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Upptaka byrjaði ekki: ",
     "Msg.RecordFailed": "Upptöku stöðvaðist með villu: ",
     "Msg.NoAudio": "Ekkert hljóð var tekið upp.",

@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Сачувано: ",
     "Msg.Recovered": "Обновљени снимци: ",
     "Msg.RecoveryFailed": "Неки делимични снимци нису могли да се поврате: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Снимање није почело: ",
     "Msg.RecordFailed": "Снимање је заустављено са грешком: ",
     "Msg.NoAudio": "Није снимљен никакав звук.",

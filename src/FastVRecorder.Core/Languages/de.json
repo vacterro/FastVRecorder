@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Gespeichert: ",
     "Msg.Recovered": "Wiederhergestellte Aufnahme(n): ",
     "Msg.RecoveryFailed": "Einige Teilaufzeichnungen konnten nicht wiederhergestellt werden: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Die Aufnahme wurde nicht gestartet: ",
     "Msg.RecordFailed": "Die Aufnahme wurde mit einem Fehler gestoppt: ",
     "Msg.NoAudio": "Es wurde kein Ton aufgenommen.",

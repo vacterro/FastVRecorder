@@ -66,102 +66,124 @@ public sealed class RecoveryService
         _isActivePart = isActivePart;
     }
 
-    public RecoveryReport RecoverAll(CancellationToken cancellationToken = default)
+    public RecoveryReport RecoverAll(CancellationToken cancellationToken = default, bool retryUnrecoverable = false)
     {
-        // One coordinator: the startup scan and the user Retry Recovery must never recover the
-        // same partial twice (which would publish duplicate, independently named outputs).
+        // One coordinator per process: the startup scan and the user Retry Recovery must never
+        // recover the same partial twice (which would publish duplicate, independently named outputs).
         lock (_runLock)
         {
             var report = new RecoveryReport();
-            // Recovery is scoped by every folder the scan can touch: the portable root (its
-            // journal/history) plus the configured and default recording folders. Sorted
-            // acquisition keeps multiple processes from deadlocking on each other.
-            var scopes = new List<string> { _paths.Root, _paths.DefaultRecordingsDir };
-            try
-            {
-                scopes.Add(_paths.ResolveRecordingFolder(_settings().Files.RecordingFolder));
-            }
-            catch
-            {
-                // An unreadable configured folder is already handled by EnumerateFolders.
-            }
+            var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var heldMutexes = new List<Mutex>();
-            foreach (var scope in scopes
-                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                         .OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
+            foreach (var entry in _journal.Snapshot())
             {
-                var mutex = TryCreateScopeMutex(scope);
-                if (mutex is null) continue;
-                var owned = false;
-                try
+                var part = entry.PartPath;
+                if (string.IsNullOrWhiteSpace(part) ||
+                    !part.EndsWith(FileNamer.PartSuffix, StringComparison.OrdinalIgnoreCase))
                 {
-                    owned = mutex.WaitOne(TimeSpan.Zero);
-                }
-                catch (AbandonedMutexException)
-                {
-                    owned = true;
+                    // The journal is app-owned, but never let a damaged/edited entry turn an
+                    // arbitrary file into a recovery source (and a sibling output).
+                    _log.Warn("Ignoring a journal entry that does not name a .wav.part file: " + part);
+                    continue;
                 }
 
-                if (!owned)
+                string full;
+                try { full = Path.GetFullPath(part); }
+                catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
                 {
-                    // Another Windows session sharing this folder is recovering right now;
-                    // scanning the same partials from both sides would duplicate outputs.
-                    mutex.Dispose();
-                    foreach (var held in heldMutexes)
-                    {
-                        try { held.ReleaseMutex(); } catch { /* shutdown race */ }
-                        held.Dispose();
-                    }
-
-                    _log.Warn("Crash recovery is already running for " + scope + " in another Windows session; skipping this scan.");
-                    return report;
+                    _log.Warn("Ignoring a journal entry with an invalid path: " + part);
+                    continue;
                 }
 
-                heldMutexes.Add(mutex);
+                if (File.Exists(full))
+                {
+                    candidates.Add(full);
+                }
+                else
+                {
+                    // The volume may simply be disconnected; keep the journal so reconnecting retries.
+                    _log.Warn("Journal part is currently unavailable: " + full);
+                }
             }
 
-            try
+            foreach (var folder in EnumerateFolders())
             {
-                var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                ScanFolder(folder, candidates);
+            }
 
-                foreach (var entry in _journal.Snapshot())
+            // Group by the directory that recovery would publish into. A cross-session exclusive
+            // lease on that directory serializes every coordinator sharing the folder, including
+            // a second portable installation and another Windows session.
+            var work = candidates
+                .Where(p => _isActivePart?.Invoke(p) != true)
+                .Select(p => (Part: p, Directory: TryGetDirectory(p)))
+                .Where(x => x.Directory is not null)
+                .OrderBy(x => x.Part, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(x => x.Directory!, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var folder in work)
+            {
+                if (cancellationToken.IsCancellationRequested) break;
+                using var lease = TryAcquireFolderLease(folder.Key, out var leaseError);
+                if (lease is null)
                 {
-                    if (File.Exists(entry.PartPath))
+                    var message = "Recovery for " + folder.Key + " was skipped: exclusive folder ownership could not be acquired. " + leaseError;
+                    _log.Error(message);
+                    foreach (var item in folder)
                     {
-                        candidates.Add(entry.PartPath);
+                        report.Failed.Add(new RecoveryFailure { Path = item.Part, Error = message });
                     }
-                    else
-                    {
-                        // The volume may simply be disconnected; keep the journal so reconnecting retries.
-                        _log.Warn("Journal part is currently unavailable: " + entry.PartPath);
-                    }
+
+                    continue;
                 }
 
-                foreach (var folder in EnumerateFolders())
-                {
-                    ScanFolder(folder, candidates);
-                }
-
-                foreach (var part in candidates.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+                foreach (var item in folder)
                 {
                     if (cancellationToken.IsCancellationRequested) break;
+                    var part = item.Part;
                     if (_isActivePart?.Invoke(part) == true)
                     {
                         // A recording that started before the scan finished owns this part.
                         continue;
                     }
 
-                    if (IsStillBeingWrittenByAnotherSession(part))
+                    if (IsReparsePoint(part))
                     {
-                        _log.Warn("Skipping a partial recording that is still growing: " + part);
+                        _log.Warn("Refusing to recover a partial file that is itself a reparse point: " + part);
+                        report.Failed.Add(new RecoveryFailure
+                        {
+                            Path = part,
+                            Error = "The partial file is a link/reparse point; recovery will not follow it.",
+                        });
+                        continue;
+                    }
+
+                    var ownership = ProbePartOwnership(part);
+                    if (ownership != PartOwnership.Free)
+                    {
+                        // OS-enforced, so a paused or buffered writer that has not grown the file
+                        // recently is still recognized. Never snapshot a held file.
+                        _log.Warn(ownership == PartOwnership.Held
+                            ? "Skipping a partial recording held open by a live writer: " + part
+                            : "Skipping a partial recording whose ownership cannot be verified: " + part);
+                        if (ownership == PartOwnership.Unknown)
+                        {
+                            // A live writer is expected and silent; an unverifiable owner is a
+                            // real inability to protect the file and must be visible.
+                            report.Failed.Add(new RecoveryFailure
+                            {
+                                Path = part,
+                                Error = "Recovery was skipped because the partial file's ownership could not be verified; it will be retried.",
+                            });
+                        }
+
                         continue;
                     }
 
                     report.Scanned++;
                     try
                     {
-                        var recovered = RecoverOne(part, report);
+                        var recovered = RecoverOne(part, report, retryUnrecoverable);
                         if (recovered is not null)
                         {
                             report.Recovered.Add(recovered);
@@ -173,57 +195,107 @@ public sealed class RecoveryService
                         report.Failed.Add(new RecoveryFailure { Path = part, Error = ex.Message });
                     }
                 }
-
-                if (report.Recovered.Count > 0)
-                {
-                    _log.Info($"Recovered {report.Recovered.Count} partial recording(s).");
-                }
-
-                return report;
             }
-            finally
+
+            if (report.Recovered.Count > 0)
             {
-                foreach (var held in heldMutexes)
-                {
-                    try { held.ReleaseMutex(); } catch { /* shutdown race */ }
-                    held.Dispose();
-                }
+                _log.Info($"Recovered {report.Recovered.Count} partial recording(s).");
             }
+
+            return report;
         }
     }
 
-    private static Mutex? TryCreateScopeMutex(string scope)
+    private static string? TryGetDirectory(string path)
     {
         try
         {
-            var digest = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(scope.ToUpperInvariant())))[..16];
-            return new Mutex(false, @"Global\FastVRecorder.Recovery." + digest);
+            return Path.GetDirectoryName(Path.GetFullPath(path));
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PlatformNotSupportedException
-            or System.Threading.WaitHandleCannotBeOpenedException)
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
             return null;
         }
     }
 
     /// <summary>
-    /// A non-empty part whose length grows right after the last write belongs to a live writer
-    /// in another Windows session; its mutex is not ours to take, so never snapshot it.
+    /// An OS-enforced lease on the folder that will receive recovered output. A named mutex was
+    /// not sufficient: creating a Global\ object can be denied by session privileges, and silently
+    /// scanning without it is exactly the duplicate-publication race this must prevent.
     /// </summary>
-    private static bool IsStillBeingWrittenByAnotherSession(string partPath)
+    private static FolderLease? TryAcquireFolderLease(string directory, out string error)
+    {
+        error = string.Empty;
+        try
+        {
+            var path = Path.Combine(directory, ".fastvrecorder-recovery.lock");
+            var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.None);
+            try { File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            return new FolderLease(stream, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            error = ex.Message;
+            return null;
+        }
+    }
+
+    private sealed class FolderLease : IDisposable
+    {
+        private FileStream? _stream;
+        private readonly string _path;
+
+        public FolderLease(FileStream stream, string path)
+        {
+            _stream = stream;
+            _path = path;
+        }
+
+        public void Dispose()
+        {
+            var stream = _stream;
+            _stream = null;
+            stream?.Dispose();
+            try { File.Delete(_path); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    private enum PartOwnership
+    {
+        Free,
+        Held,
+        Unknown,
+    }
+
+    /// <summary>
+    /// Tests for a live writer with Windows sharing rules instead of a length/time heuristic.
+    /// The recorder keeps every part open with FileShare.Read while it writes, so a FileShare.None
+    /// open fails for a live writer even when it is paused, buffered or stalled on slow storage.
+    /// </summary>
+    private static PartOwnership ProbePartOwnership(string partPath)
     {
         try
         {
-            var info = new FileInfo(partPath);
-            if (!info.Exists) return false;
-            if (DateTime.UtcNow - info.LastWriteTimeUtc >= TimeSpan.FromSeconds(10)) return false;
-            var firstLength = info.Length;
-            Thread.Sleep(200);
-            return new FileInfo(partPath).Length != firstLength;
+            using var probe = new FileStream(partPath, FileMode.Open, FileAccess.Read, FileShare.None, 1, FileOptions.None);
+            return PartOwnership.Free;
+        }
+        catch (FileNotFoundException)
+        {
+            return PartOwnership.Free;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return PartOwnership.Free;
+        }
+        catch (IOException ex) when ((ex.HResult & 0xFFFF) is 32 or 33)
+        {
+            return PartOwnership.Held;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return false;
+            return PartOwnership.Unknown;
         }
     }
 
@@ -287,8 +359,15 @@ public sealed class RecoveryService
         }
     }
 
-    private RecoveredItem? RecoverOne(string partPath, RecoveryReport report)
+    private RecoveredItem? RecoverOne(string partPath, RecoveryReport report, bool retryUnrecoverable)
     {
+        if (!File.Exists(partPath))
+        {
+            // The owner finalized and renamed it between the scan and this attempt.
+            _log.Debug("Partial file disappeared before recovery: " + partPath);
+            return null;
+        }
+
         var basePath = partPath.EndsWith(FileNamer.PartSuffix, StringComparison.OrdinalIgnoreCase)
             ? partPath[..^FileNamer.PartSuffix.Length]
             : partPath;
@@ -297,10 +376,39 @@ public sealed class RecoveryService
         var unrecoverableMarker = basePath + ".unrecoverable.json";
 
         var metadata = TryReadMetadata(metaPath);
+        var directory = Path.GetDirectoryName(partPath)!;
+        var stem = Path.GetFileNameWithoutExtension(basePath);
 
-        if (!WavHeader.TryParse(partPath, out var info, out var headerError) || info is null)
+        // Receipts are consulted before any parsing: a structurally damaged file must not be
+        // re-read and re-classified on every launch, and an explicit Retry must bypass the receipt.
+        // A verified recovery claim (canonical existing marker/metadata output) keeps the file in
+        // the normal flow so a stale receipt can never hide the need to index a recovered output.
+        if (!retryUnrecoverable && File.Exists(unrecoverableMarker) &&
+            !HasVerifiedRecoveryClaim(markerPath, metadata, directory, stem) &&
+            UnrecoverableMarkerStillApplies(unrecoverableMarker, partPath))
         {
-            Fail(partPath, "Cannot read the stored WAV header: " + headerError, unrecoverableMarker, report, permanent: true);
+            _journal.Remove(partPath);
+            return null;
+        }
+
+        if (retryUnrecoverable && File.Exists(unrecoverableMarker))
+        {
+            _log.Info("Explicit retry re-evaluates the unrecoverable receipt: " + partPath);
+        }
+
+        WavInfo? info;
+        try
+        {
+            if (!WavHeader.TryParse(partPath, out info, out var headerError) || info is null)
+            {
+                Fail(partPath, "Cannot read the stored WAV header: " + headerError, unrecoverableMarker, report, permanent: true);
+                return null;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A partially readable volume is transient; never classify the source as corrupt.
+            Fail(partPath, "The partial file is currently unreadable: " + ex.Message, unrecoverableMarker, report, permanent: false);
             return null;
         }
 
@@ -318,10 +426,9 @@ public sealed class RecoveryService
             return null;
         }
 
-        var directory = Path.GetDirectoryName(partPath)!;
-        var stem = Path.GetFileNameWithoutExtension(basePath);
         var outputPath = Path.Combine(directory, stem + "_RECOVERED.wav");
         var partLength = TryGetFileLength(partPath);
+        var created = metadata?.StartedAtUtc.ToLocalTime() ?? File.GetCreationTime(partPath);
 
         if (File.Exists(markerPath))
         {
@@ -331,7 +438,14 @@ public sealed class RecoveryService
                     partLength, marker.SourcePart, marker.SourceLength, marker.DataSha256))
             {
                 _log.Debug("Partial already recovered: " + partPath);
-                _journal.Remove(partPath);
+                if (EnsureIndexed(marker.RecoveredPath!, partPath, created, dataBytes, format, report))
+                {
+                    _journal.Remove(partPath);
+                }
+
+                // The source produced a verified recovered output; any earlier failure receipt
+                // is stale even when indexing still has to be retried.
+                TryDelete(unrecoverableMarker);
                 return null;
             }
 
@@ -342,13 +456,12 @@ public sealed class RecoveryService
             IsTrustedOutput(metadata.RecoveredPath, partPath, directory, stem, format, dataBytes,
                 partLength, metadata.PartPath, metadata.SourceLength, metadata.SourceDataSha256))
         {
-            _journal.Remove(partPath);
-            return null;
-        }
+            if (EnsureIndexed(metadata.RecoveredPath, partPath, created, dataBytes, format, report))
+            {
+                _journal.Remove(partPath);
+            }
 
-        if (File.Exists(unrecoverableMarker) && UnrecoverableMarkerStillApplies(unrecoverableMarker, partLength))
-        {
-            _journal.Remove(partPath);
+            TryDelete(unrecoverableMarker);
             return null;
         }
 
@@ -361,28 +474,22 @@ public sealed class RecoveryService
             return null;
         }
 
+        // Adopt any canonical sibling left by an interrupted publication, including a
+        // collision-numbered `_RECOVERED_001.wav`; comparing PCM identity, never the name alone.
+        var adoptedPath = TryAdoptExistingOutput(directory, stem, format, dataBytes, expectedPcmSha256);
         string? outputPcmSha256 = null;
-        var adopted = false;
-        if (File.Exists(outputPath) &&
-            !IsReparsePoint(outputPath) &&
-            WavVerifier.Verify(outputPath, format, dataBytes, out _) &&
-            CanReadAudio(outputPath, out _))
-        {
-            outputPcmSha256 = TryComputePcmSha256(outputPath, WavHeader.DataOffsetOf(outputPath), dataBytes);
-            adopted = string.Equals(outputPcmSha256, expectedPcmSha256, StringComparison.Ordinal);
-        }
-
         long written;
-        if (adopted)
+        var createdOutput = false;
+        if (adoptedPath is not null)
         {
-            // A crash after publishing the recovered file but before history/marker commit:
-            // adopt the identity-verified file instead of creating an uncontrolled duplicate.
+            outputPath = adoptedPath;
+            outputPcmSha256 = expectedPcmSha256;
             written = dataBytes;
             _log.Info("Adopting existing verified recovery output: " + outputPath);
         }
         else
         {
-            if (File.Exists(outputPath))
+            if (File.Exists(outputPath) || IsReparsePoint(outputPath))
             {
                 outputPath = FileNamer.NextFreePath(outputPath);
             }
@@ -400,27 +507,29 @@ public sealed class RecoveryService
 
                 if (written == 0)
                 {
+                    // The source header was readable but produced no frames; treat it as
+                    // structural, because retrying the same bytes cannot succeed.
                     Fail(partPath, "Copying the stored audio produced no frames.", unrecoverableMarker, report, permanent: true);
                     return null;
                 }
 
                 if (!WavVerifier.Verify(temporary, format, written, out var verifyError))
                 {
-                    Fail(partPath, "Recovered WAV failed verification: " + verifyError, unrecoverableMarker, report, permanent: !IsTransientlyUnreadable(temporary));
+                    // The source parsed and hashed; a bad temporary is a destination-side problem.
+                    Fail(partPath, "Recovered WAV failed verification: " + verifyError, unrecoverableMarker, report, permanent: false);
                     return null;
                 }
 
                 if (!CanReadAudio(temporary, out var playError))
                 {
-                    Fail(partPath, "Recovered WAV cannot be read back: " + playError, unrecoverableMarker, report, permanent: !IsTransientlyUnreadable(temporary));
+                    Fail(partPath, "Recovered WAV cannot be read back: " + playError, unrecoverableMarker, report, permanent: false);
                     return null;
                 }
 
                 var temporaryPcmSha256 = TryComputePcmSha256(temporary, WavHeader.DataOffsetOf(temporary), written);
                 if (!string.Equals(temporaryPcmSha256, expectedPcmSha256, StringComparison.Ordinal))
                 {
-                    Fail(partPath, "Recovered WAV does not carry the original audio payload.", unrecoverableMarker, report,
-                        permanent: !IsTransientlyUnreadable(temporary));
+                    Fail(partPath, "Recovered WAV does not carry the original audio payload.", unrecoverableMarker, report, permanent: false);
                     return null;
                 }
 
@@ -436,6 +545,7 @@ public sealed class RecoveryService
 
                 File.Move(temporary, finalPath, overwrite: false);
                 outputPath = finalPath;
+                createdOutput = true;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -452,43 +562,36 @@ public sealed class RecoveryService
 
         if (!WavVerifier.Verify(outputPath, format, written, out var resultVerifyError))
         {
-            Fail(partPath, "Recovered WAV failed final verification: " + resultVerifyError, unrecoverableMarker, report, permanent: !IsTransientlyUnreadable(outputPath));
+            Fail(partPath, "Recovered WAV failed final verification: " + resultVerifyError, unrecoverableMarker, report, permanent: false);
+            if (createdOutput) TryDelete(outputPath);
             return null;
         }
 
         if (!CanReadAudio(outputPath, out var resultReadError))
         {
-            Fail(partPath, "Recovered WAV cannot be read back: " + resultReadError, unrecoverableMarker, report, permanent: !IsTransientlyUnreadable(outputPath));
+            Fail(partPath, "Recovered WAV cannot be read back: " + resultReadError, unrecoverableMarker, report, permanent: false);
+            if (createdOutput) TryDelete(outputPath);
             return null;
         }
 
         if (outputPcmSha256 is null ||
             !string.Equals(outputPcmSha256, expectedPcmSha256, StringComparison.Ordinal))
         {
-            Fail(partPath, "Recovered WAV identity changed before publication.", unrecoverableMarker, report,
-                permanent: !IsTransientlyUnreadable(outputPath));
+            Fail(partPath, "Recovered WAV identity changed before publication.", unrecoverableMarker, report, permanent: false);
+            if (createdOutput) TryDelete(outputPath);
             return null;
         }
 
         var duration = TimeSpan.FromSeconds((double)written / format.AverageBytesPerSecond);
         var size = new FileInfo(outputPath).Length;
-        var created = metadata?.StartedAtUtc.ToLocalTime() ?? File.GetCreationTime(partPath);
 
-        if (_history.Snapshot().All(e => !string.Equals(e.Path, outputPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            _history.Add(new HistoryEntry
-            {
-                Path = outputPath,
-                CreatedLocal = created,
-                DurationSeconds = duration.TotalSeconds,
-                SizeBytes = size,
-                Format = "WAV",
-                Recovered = true,
-                Note = "Recovered from " + Path.GetFileName(partPath) +
-                       (written < dataBytes ? $" ({dataBytes - written} bytes of the last frame were dropped)." : "."),
-            });
-        }
+        // Audio publication is complete at this point. Indexing and receipts decide only whether
+        // the transaction can be closed, never whether the recovered file is kept.
+        var indexed = EnsureIndexed(outputPath, partPath, created, written, format, report);
+        // Publication is verified; the failure receipt (if any) no longer describes this part.
+        TryDelete(unrecoverableMarker);
 
+        var metaWritten = false;
         if (metadata is not null)
         {
             metadata.RecoveredAtUtc = DateTime.UtcNow;
@@ -496,10 +599,10 @@ public sealed class RecoveryService
             metadata.RecoveryError = null;
             metadata.SourceLength = partLength;
             metadata.SourceDataSha256 = outputPcmSha256;
-            TryWriteJson(metaPath, metadata, overwrite: true);
+            metaWritten = TryWriteJson(metaPath, metadata, overwrite: true);
         }
 
-        TryWriteJson(markerPath, new
+        var markerWritten = TryWriteJson(markerPath, new
         {
             recoveredPath = outputPath,
             recoveredAtUtc = DateTime.UtcNow,
@@ -510,7 +613,23 @@ public sealed class RecoveryService
             dataSha256 = outputPcmSha256,
         }, overwrite: true);
 
-        _journal.Remove(partPath);
+        if (indexed && (markerWritten || metaWritten))
+        {
+            _journal.Remove(partPath);
+        }
+        else
+        {
+            var reason = !indexed
+                ? "the History index could not be saved"
+                : "neither recovery receipt could be written";
+            _log.Error($"Recovered audio is verified at {outputPath}, but {reason}; the journal was kept for retry.");
+            report.Failed.Add(new RecoveryFailure
+            {
+                Path = partPath,
+                Error = $"Recovered audio is saved, but {reason}. It will be retried on the next launch.",
+            });
+        }
+
         _log.Info($"Recovered partial recording {partPath} -> {outputPath} ({duration}).");
 
         // Never delete a file merely because recovery metadata references it. The part itself is
@@ -524,6 +643,117 @@ public sealed class RecoveryService
             SizeBytes = size,
             Format = "WAV",
         };
+    }
+
+    /// <summary>
+    /// Adds the verified recovered file to History when it is missing. Returns true when the index
+    /// already contains it or the save succeeded; false means a durable retry is still required.
+    /// </summary>
+    private bool EnsureIndexed(
+        string outputPath,
+        string partPath,
+        DateTime created,
+        long dataBytes,
+        TargetFormat format,
+        RecoveryReport report)
+    {
+        if (_history.Snapshot().Any(e => string.Equals(e.Path, outputPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            // The entry may exist only in memory after a failed save; retry the write before
+            // closing the recovery transaction.
+            return _history.LastSaveError is null || _history.TrySave();
+        }
+
+        var entry = new HistoryEntry
+        {
+            Path = outputPath,
+            CreatedLocal = created,
+            DurationSeconds = (double)dataBytes / format.AverageBytesPerSecond,
+            SizeBytes = TryGetFileLength(outputPath) ?? 0,
+            Format = "WAV",
+            Recovered = true,
+            Note = "Recovered from " + Path.GetFileName(partPath) + ".",
+        };
+
+        if (_history.TryAdd(entry))
+        {
+            return true;
+        }
+
+        var error = _history.LastSaveError ?? "the index write failed";
+        _log.Error("Recovered audio was published but History could not be saved: " + outputPath + " - " + error);
+        report.Failed.Add(new RecoveryFailure
+        {
+            Path = partPath,
+            Error = "Recovered audio is saved, but History could not be updated (" + error + "). Indexing will be retried on the next launch.",
+        });
+        return false;
+    }
+
+    /// <summary>
+    /// Finds a canonical `_RECOVERED*.wav` sibling whose PCM payload is exactly this part's
+    /// payload. This is what makes a crash between publishing and committing the marker harmless.
+    /// </summary>
+    private string? TryAdoptExistingOutput(
+        string directory,
+        string stem,
+        TargetFormat format,
+        long dataBytes,
+        string expectedPcmSha256)
+    {
+        IEnumerable<string> files;
+        try
+        {
+            files = Directory.EnumerateFiles(directory, stem + "_RECOVERED*.wav", SearchOption.TopDirectoryOnly).Take(100).ToList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        foreach (var candidate in files.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!IsCanonicalRecoveredOutput(candidate, directory, stem)) continue;
+            if (IsReparsePoint(candidate)) continue;
+            if (!WavVerifier.Verify(candidate, format, dataBytes, out _)) continue;
+            if (!CanReadAudio(candidate, out _)) continue;
+
+            var actual = TryComputePcmSha256(candidate, WavHeader.DataOffsetOf(candidate), dataBytes);
+            if (string.Equals(actual, expectedPcmSha256, StringComparison.Ordinal))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// True when the part carries a verified claim of a recovered output: the marker parses and
+    /// names a canonical existing sibling, or metadata names one. A merely present/stale marker or
+    /// metadata field is not a claim and must not defeat a matching unrecoverable receipt.
+    /// </summary>
+    private static bool HasVerifiedRecoveryClaim(
+        string markerPath,
+        RecoveryMetadata? metadata,
+        string directory,
+        string stem)
+    {
+        if (File.Exists(markerPath))
+        {
+            var marker = TryReadMarker(markerPath);
+            if (IsExistingCanonicalOutput(marker?.RecoveredPath, directory, stem)) return true;
+        }
+
+        return IsExistingCanonicalOutput(metadata?.RecoveredPath, directory, stem);
+    }
+
+    private static bool IsExistingCanonicalOutput(string? claimedPath, string directory, string stem)
+    {
+        if (string.IsNullOrWhiteSpace(claimedPath)) return false;
+        if (!IsCanonicalRecoveredOutput(claimedPath, directory, stem)) return false;
+        if (IsReparsePoint(claimedPath)) return false;
+        return File.Exists(claimedPath);
     }
 
     /// <summary>
@@ -607,20 +837,44 @@ public sealed class RecoveryService
         }
     }
 
-    private bool UnrecoverableMarkerStillApplies(string markerPath, long? partLength)
+    /// <summary>
+    /// The receipt suppresses repeated work only while it still describes the same bytes. A
+    /// malformed or identity-less marker is re-evaluated once, then rewritten with identity.
+    /// </summary>
+    private bool UnrecoverableMarkerStillApplies(string markerPath, string partPath)
     {
         var prior = TryReadUnrecoverable(markerPath);
         if (prior is null)
         {
-            // A legacy/damaged marker: keep the historical behavior of not retrying forever.
-            return true;
+            _log.Warn("A malformed unrecoverable receipt is advisory; re-evaluating the partial file: " + markerPath);
+            return false;
         }
 
-        if (prior.SourceLength is null) return true;
-        if (partLength is null) return true;
-        if (prior.SourceLength.Value == partLength.Value) return true;
-        _log.Warn("The unrecoverable marker no longer matches the partial file; retrying recovery: " + markerPath);
-        return false;
+        if (prior.SourceLength is null || string.IsNullOrWhiteSpace(prior.SourceSampleSha256))
+        {
+            _log.Warn("An unrecoverable receipt without source identity is stale; re-evaluating: " + markerPath);
+            return false;
+        }
+
+        var current = TryComputeSourceFingerprint(partPath);
+        if (current is null)
+        {
+            // The source is momentarily unreadable (disconnected/busy storage); let the normal
+            // recovery path report a transient failure instead of hiding it behind the receipt.
+            return false;
+        }
+
+        if (prior.SourceLength.Value != current.Length ||
+            !string.Equals(prior.SourceSampleSha256, current.SampleSha256, StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrWhiteSpace(prior.SourceHeaderSha256) &&
+             !string.Equals(prior.SourceHeaderSha256, current.HeaderSha256, StringComparison.OrdinalIgnoreCase)) ||
+            (prior.SourceLastWriteUtcTicks is not null && prior.SourceLastWriteUtcTicks.Value != current.LastWriteUtcTicks))
+        {
+            _log.Warn("The unrecoverable receipt no longer matches the partial file; retrying recovery: " + markerPath);
+            return false;
+        }
+
+        return true;
     }
 
     private static long? TryGetFileLength(string path)
@@ -641,20 +895,67 @@ public sealed class RecoveryService
         }
     }
 
+    private sealed record SourceFingerprint(long Length, long LastWriteUtcTicks, string SampleSha256, string HeaderSha256);
+
     /// <summary>
-    /// True when a freshly written/checked file is momentarily locked or denied. Such a failure
-    /// is transient and must not be recorded as a permanent unrecoverable classification.
+    /// A bounded identity for a partial file: length, a hash of the first and last 1 MiB, and a
+    /// hash of the header bytes. Enough to notice a repaired header or rewritten audio without
+    /// hashing multi-gigabyte files on every launch.
     /// </summary>
-    private static bool IsTransientlyUnreadable(string path)
+    private static SourceFingerprint? TryComputeSourceFingerprint(string path)
     {
+        const int chunk = 1 << 20;
+        const int headerBytes = 64;
         try
         {
-            using var probe = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            return false;
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1 << 16);
+            var length = stream.Length;
+            if (length <= 0) return null;
+
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var lengthBytes = new byte[8];
+            System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(lengthBytes, length);
+            hash.AppendData(lengthBytes);
+
+            var firstCount = (int)Math.Min(chunk, length);
+            var buffer = new byte[Math.Max(chunk, firstCount)];
+            stream.Position = 0;
+            ReadExactly(stream, buffer, firstCount);
+            hash.AppendData(buffer, 0, firstCount);
+
+            var headerCount = (int)Math.Min(headerBytes, length);
+            using var headerHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            headerHash.AppendData(buffer, 0, headerCount);
+
+            var lastStart = Math.Max(firstCount, length - chunk);
+            var lastCount = (int)(length - lastStart);
+            if (lastCount > 0)
+            {
+                stream.Position = lastStart;
+                ReadExactly(stream, buffer, lastCount);
+                hash.AppendData(buffer, 0, lastCount);
+            }
+
+            return new SourceFingerprint(
+                length,
+                File.GetLastWriteTimeUtc(path).Ticks,
+                Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant(),
+                Convert.ToHexString(headerHash.GetHashAndReset()).ToLowerInvariant());
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
-            return true;
+            return null;
+        }
+    }
+
+    private static void ReadExactly(Stream stream, byte[] buffer, int count)
+    {
+        var done = 0;
+        while (done < count)
+        {
+            var read = stream.Read(buffer, done, count - done);
+            if (read <= 0) throw new EndOfStreamException();
+            done += read;
         }
     }
 
@@ -728,12 +1029,25 @@ public sealed class RecoveryService
             return;
         }
 
+        var fingerprint = TryComputeSourceFingerprint(partPath);
+        if (fingerprint is null)
+        {
+            // Without a bounded identity the receipt would hide audio forever; keep the part
+            // retryable instead of writing an unidentified permanent marker.
+            _log.Warn("The partial file's identity could not be read; no permanent receipt was written for " + partPath);
+            return;
+        }
+
         TryWriteJson(markerPath, new
         {
             error,
             failedAtUtc = DateTime.UtcNow,
             note = "The damaged .wav.part was kept for diagnosis.",
-            sourceLength = TryGetFileLength(partPath),
+            sourceLength = fingerprint.Length,
+            sourceLastWriteUtcTicks = fingerprint.LastWriteUtcTicks,
+            sourceSampleSha256 = fingerprint.SampleSha256,
+            sourceHeaderSha256 = fingerprint.HeaderSha256,
+            fingerprintVersion = 1,
         }, overwrite: true);
     }
 
@@ -797,7 +1111,11 @@ public sealed class RecoveryService
         }
     }
 
-    private sealed record LegacyUnrecoverable(long? SourceLength);
+    private sealed record LegacyUnrecoverable(
+        long? SourceLength,
+        string? SourceSampleSha256,
+        string? SourceHeaderSha256,
+        long? SourceLastWriteUtcTicks);
 
     private static LegacyUnrecoverable? TryReadUnrecoverable(string path)
     {
@@ -807,13 +1125,20 @@ public sealed class RecoveryService
         {
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
-            if (root.TryGetProperty("sourceLength", out var value) && value.ValueKind == JsonValueKind.Number &&
-                value.TryGetInt64(out var length))
-            {
-                return new LegacyUnrecoverable(length);
-            }
-
-            return new LegacyUnrecoverable(null);
+            string? ReadString(string name) =>
+                root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                    ? value.GetString()
+                    : null;
+            long? ReadLong(string name) =>
+                root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number &&
+                value.TryGetInt64(out var number)
+                    ? number
+                    : null;
+            return new LegacyUnrecoverable(
+                ReadLong("sourceLength"),
+                ReadString("sourceSampleSha256"),
+                ReadString("sourceHeaderSha256"),
+                ReadLong("sourceLastWriteUtcTicks"));
         }
         catch (JsonException)
         {
@@ -835,22 +1160,24 @@ public sealed class RecoveryService
         }
     }
 
-    private static void TryWriteJson(string path, object value, bool overwrite = false)
+    private static bool TryWriteJson(string path, object value, bool overwrite = false)
     {
         try
         {
             if (overwrite && File.Exists(path) && IsReparsePoint(path))
             {
                 // Never write through a planted marker symlink.
-                return;
+                return false;
             }
 
-            if (!overwrite && File.Exists(path)) return;
+            if (!overwrite && File.Exists(path)) return true;
             AtomicFile.WriteAllText(path, JsonSerializer.Serialize(value, Json));
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // Markers are advisory.
+            // Markers are advisory, but recovery still needs to know whether the receipt landed.
+            return false;
         }
     }
 

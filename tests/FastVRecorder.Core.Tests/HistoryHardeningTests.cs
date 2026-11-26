@@ -48,4 +48,30 @@ public sealed class HistoryHardeningTests : TempDirectoryTest
         Assert.Equal(100, store.Snapshot().Count);
         Assert.Null(store.LastSaveError);
     }
+
+    [Fact]
+    public void NewlyIndexedEntrySurvivesRetentionEviction()
+    {
+        var store = new HistoryStore(HistoryPath) { MaxEntriesLimit = 2 };
+        store.Load();
+        var old = Path.Combine(Root, "old.wav");
+        var newer = Path.Combine(Root, "newer.wav");
+        var recovered = Path.Combine(Root, "recovered.wav");
+        Assert.True(store.TryAdd(new HistoryEntry { Path = old, CreatedLocal = new DateTime(2020, 1, 1) }));
+        Assert.True(store.TryAdd(new HistoryEntry { Path = newer, CreatedLocal = new DateTime(2021, 1, 1) }));
+
+        // A recovered file keeps its original (older) recording time; it must still be indexed.
+        Assert.True(store.TryAdd(new HistoryEntry
+        {
+            Path = recovered,
+            CreatedLocal = new DateTime(2019, 1, 1),
+            Recovered = true,
+        }));
+
+        var snapshot = store.Snapshot();
+        Assert.Equal(2, snapshot.Count);
+        Assert.Contains(snapshot, entry => entry.Path == recovered);
+        Assert.Contains(snapshot, entry => entry.Path == newer);
+        Assert.DoesNotContain(snapshot, entry => entry.Path == old);
+    }
 }

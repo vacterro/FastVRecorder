@@ -24,6 +24,7 @@
   <img src="media/screenshots/settings.png" width="23%" alt="Recording and file settings">
   <p><sub>Recorder · Live recording · Hotkeys · Settings — Golden Default theme</sub></p>
   <a href="media/screenshots">More screenshots</a>
+  <p><sub>Captured on the 0.0.x series; the 0.0.5 layout is unchanged. The live-recording image is historical hardware evidence.</sub></p>
 </div>
 
 ## Features
@@ -51,9 +52,12 @@ Windows 10/11 x64 and the .NET 10 SDK are required for development.
 
 ```powershell
 .\scripts\Publish.ps1
+.\scripts\Package.ps1
 ```
 
-The self-contained portable build is generated in `dist\FastVRecorder`. No separate .NET runtime installation is required for the published build.
+The self-contained portable build is generated in `dist\FastVRecorder`; `Package.ps1` verifies
+every file against `publish-manifest.json` and writes a reproducible release ZIP plus SHA-256
+checksum to `release\`. No separate .NET runtime installation is required for the published build.
 
 ## Documentation
 

@@ -27,6 +27,7 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
+- [/] T-13 [P2] SAIHANDOFF-4 FastVRecorder final stabilization and release readiness | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-010 | owner: saipen | claim_time: 2026-11-26T13:04:48Z
 
 ## TODO
 

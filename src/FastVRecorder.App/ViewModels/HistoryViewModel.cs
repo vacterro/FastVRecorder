@@ -393,6 +393,11 @@ public sealed class HistoryViewModel : ObservableObject
 
             IsRenaming = false;
             StatusText = _loc["Common.Saved"];
+            if (!string.IsNullOrWhiteSpace(_history.LastSaveError))
+            {
+                ErrorText = _loc["Msg.HistorySaveFailed"] + _history.LastSaveError;
+            }
+
             Refresh();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
@@ -420,6 +425,11 @@ public sealed class HistoryViewModel : ObservableObject
         {
             _history.Remove(item.Path);
             StatusText = _loc["Hist.Deleted"];
+            if (!string.IsNullOrWhiteSpace(_history.LastSaveError))
+            {
+                ErrorText = _loc["Msg.HistorySaveFailed"] + _history.LastSaveError;
+            }
+
             Refresh();
         }
         else

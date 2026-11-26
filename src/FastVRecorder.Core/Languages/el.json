@@ -200,6 +200,7 @@
     "Msg.SavedTo": "Αποθηκεύτηκε: ",
     "Msg.Recovered": "Ανακτημένες εγγραφές: ",
     "Msg.RecoveryFailed": "Δεν ήταν δυνατή η ανάκτηση ορισμένων μερικών εγγραφών: ",
+    "Msg.HistorySaveFailed": "Audio is saved, but the History index could not be written: ",
     "Msg.StartFailed": "Η εγγραφή δεν ξεκίνησε: ",
     "Msg.RecordFailed": "Η εγγραφή σταμάτησε με σφάλμα: ",
     "Msg.NoAudio": "Δεν καταγράφηκε ήχος.",
