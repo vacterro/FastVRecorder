@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Hiçbir ses kaydedilmedi.",
     "Msg.HotkeyConflict": "Kısayol çakışması: ",
     "Msg.SettingsReadOnly": "Taşınabilir klasör salt okunur olduğundan ayarlar kaydedilemiyor.",
+    "Msg.SettingsReloaded": "settings.json yeniden okunabilir durumda ve diskteki kopya korundu. Yeniden okunan ayarları görmek için FastVRecorder'ı yeniden başlatın.",
     "Msg.AlreadyRunning": "FastVRecorder zaten çalışıyor.",
     "Msg.UnexpectedError": "Beklenmeyen hata: ",
     "Msg.Copied": "Kopyalandı.",

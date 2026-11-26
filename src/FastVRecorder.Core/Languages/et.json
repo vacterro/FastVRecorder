@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Heli ei salvestatud.",
     "Msg.HotkeyConflict": "Otseteede konflikt: ",
     "Msg.SettingsReadOnly": "Sätteid ei saa salvestada, kuna kaasaskantav kaust on kirjutuskaitstud.",
+    "Msg.SettingsReloaded": "settings.json on taas loetav ja kettal olev koopia säilitati. Taaskäivitage FastVRecorder, et näha uuesti loetud seadeid.",
     "Msg.AlreadyRunning": "FastVRecorder juba töötab.",
     "Msg.UnexpectedError": "Ootamatu viga: ",
     "Msg.Copied": "Kopeeritud.",

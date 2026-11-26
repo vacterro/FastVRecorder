@@ -43,5 +43,11 @@ public sealed class RecoveryMetadata
 
     public string? RecoveredPath { get; set; }
 
+    /// <summary>Length of the partial file at recovery time; markers are advisory only.</summary>
+    public long? SourceLength { get; set; }
+
+    /// <summary>SHA-256 of the recovered PCM payload, binding the output to this recording.</summary>
+    public string? SourceDataSha256 { get; set; }
+
     public string? RecoveryError { get; set; }
 }

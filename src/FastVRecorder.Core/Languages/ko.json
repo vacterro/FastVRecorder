@@ -205,6 +205,7 @@
     "Msg.NoAudio": "오디오가 녹음되지 않았습니다.",
     "Msg.HotkeyConflict": "바로가기 충돌: ",
     "Msg.SettingsReadOnly": "휴대용 폴더가 읽기 전용이므로 설정을 저장할 수 없습니다.",
+    "Msg.SettingsReloaded": "settings.json을 다시 읽을 수 있게 되었고 디스크의 사본이 유지되었습니다. 다시 읽은 설정을 보려면 FastVRecorder를 재시작하세요.",
     "Msg.AlreadyRunning": "FastVRecorder가 이미 실행 중입니다.",
     "Msg.UnexpectedError": "예상치 못한 오류: ",
     "Msg.Copied": "복사되었습니다.",

@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Es wurde kein Ton aufgenommen.",
     "Msg.HotkeyConflict": "Verknüpfungskonflikt: ",
     "Msg.SettingsReadOnly": "Die Einstellungen können nicht gespeichert werden, da der tragbare Ordner schreibgeschützt ist.",
+    "Msg.SettingsReloaded": "settings.json ist wieder lesbar und die Kopie auf dem Datenträger wurde beibehalten. Starten Sie FastVRecorder neu, um die erneut gelesenen Einstellungen zu sehen.",
     "Msg.AlreadyRunning": "FastVRecorder läuft bereits.",
     "Msg.UnexpectedError": "Unerwarteter Fehler: ",
     "Msg.Copied": "Kopiert.",

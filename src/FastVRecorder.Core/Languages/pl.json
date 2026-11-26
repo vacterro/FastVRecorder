@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Nie nagrano żadnego dźwięku.",
     "Msg.HotkeyConflict": "Konflikt skrótów: ",
     "Msg.SettingsReadOnly": "Nie można zapisać ustawień, ponieważ folder przenośny jest tylko do odczytu.",
+    "Msg.SettingsReloaded": "settings.json jest ponownie czytelny, a kopia na dysku została zachowana. Uruchom ponownie FastVRecorder, aby zobaczyć ponownie odczytane ustawienia.",
     "Msg.AlreadyRunning": "FastVRecorder już działa.",
     "Msg.UnexpectedError": "Nieoczekiwany błąd: ",
     "Msg.Copied": "Skopiowano.",

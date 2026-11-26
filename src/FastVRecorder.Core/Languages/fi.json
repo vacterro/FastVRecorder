@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Ääntä ei tallennettu.",
     "Msg.HotkeyConflict": "Pikanäppäinristiriita: ",
     "Msg.SettingsReadOnly": "Asetuksia ei voi tallentaa, koska kannettava kansio on vain luku -tilassa.",
+    "Msg.SettingsReloaded": "settings.json on taas luettavissa ja levylle tallennettu kopio säilytettiin. Käynnistä FastVRecorder uudelleen nähdäksesi uudelleen luetut asetukset.",
     "Msg.AlreadyRunning": "FastVRecorder on jo käynnissä.",
     "Msg.UnexpectedError": "Odottamaton virhe: ",
     "Msg.Copied": "Kopioitu.",

@@ -1,0 +1,19 @@
+{
+  "event_id": "E-167",
+  "externalization_event": {
+    "operation_id": "checkpoint-f7ade8a4de694edd895f9e1dc83537e2",
+    "reason": "new LOG event exceeds the live cap; canonical detail externalization"
+  },
+  "lossless": true,
+  "metadata_path": ".saipen/recovery/log-detail/E-167-11ccb1ed33d9d590435decfc.json",
+  "operation": "log_event_externalization",
+  "original_event_bytes": 1718,
+  "original_event_path": ".saipen/recovery/log-detail/E-167-11ccb1ed33d9d590435decfc.LOG.md",
+  "original_event_sha256": "11ccb1ed33d9d590435decfc2e64ab29afe527439ec985fe887a1936d765cda3",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "schema_version": 1,
+  "source": ".saipen/LOG.md",
+  "status": "COMMITTED",
+  "ticket_id": "T-12"
+}

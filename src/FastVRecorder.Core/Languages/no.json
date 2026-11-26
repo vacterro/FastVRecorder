@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Ingen lyd ble tatt opp.",
     "Msg.HotkeyConflict": "Snarveiskonflikt: ",
     "Msg.SettingsReadOnly": "Innstillingene kan ikke lagres fordi den bærbare mappen er skrivebeskyttet.",
+    "Msg.SettingsReloaded": "settings.json er lesbart igjen og kopien på disken ble bevart. Start FastVRecorder på nytt for å se de innleste innstillingene.",
     "Msg.AlreadyRunning": "FastVRecorder kjører allerede.",
     "Msg.UnexpectedError": "Uventet feil: ",
     "Msg.Copied": "Kopiert.",

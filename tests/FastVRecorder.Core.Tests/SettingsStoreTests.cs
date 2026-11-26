@@ -30,6 +30,189 @@ public sealed class SettingsStoreTests : TempDirectoryTest
     }
 
     [Fact]
+    public void UnreadablePrimaryWithValidBackup_StaysReadOnlyAndUsesTheBackupInMemory()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var first = new AppSettings();
+        first.Files.Prefix = "BackupValue";
+        Assert.True(store.Save(first));
+        var second = new AppSettings();
+        second.Files.Prefix = "PrimaryValue";
+        Assert.True(store.Save(second));
+        Assert.True(File.Exists(SettingsPath + ".bak"));
+
+        using (new FileStream(SettingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            var lockedStore = new SettingsStore(SettingsPath);
+            var loaded = lockedStore.Load();
+
+            Assert.Equal(SettingsLoadStatus.Unreadable, lockedStore.LoadStatus);
+            Assert.Equal(SettingsFileState.SharingViolation, lockedStore.PrimaryState);
+            Assert.False(lockedStore.CanSave);
+            Assert.Equal("BackupValue", loaded.Files.Prefix);
+            Assert.False(lockedStore.Save(loaded));
+        }
+    }
+
+    [Fact]
+    public void AccessDeniedPrimary_IsExplicitlyClassifiedAndNeverOverwritten()
+    {
+        Directory.CreateDirectory(SettingsPath);
+        var store = new SettingsStore(SettingsPath);
+        var loaded = store.Load();
+
+        Assert.Equal(SettingsLoadStatus.Unreadable, store.LoadStatus);
+        Assert.Equal(SettingsFileState.AccessDenied, store.PrimaryState);
+        Assert.False(store.CanSave);
+        Assert.False(store.Save(loaded));
+        Assert.True(Directory.Exists(SettingsPath));
+    }
+
+    [Fact]
+    public void LockClearingAfterLoad_ReloadsThePrimaryInsteadOfOverwritingIt()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var settings = new AppSettings();
+        settings.Files.Prefix = "NewerPrimary";
+        Assert.True(store.Save(settings));
+
+        SettingsStore lockedStore;
+        using (new FileStream(SettingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            lockedStore = new SettingsStore(SettingsPath);
+            lockedStore.Load();
+            Assert.False(lockedStore.CanSave);
+        }
+
+        Assert.True(lockedStore.TryReloadAfterAccessRestored(out var reloaded));
+        Assert.NotNull(reloaded);
+        Assert.Equal(SettingsLoadStatus.Loaded, lockedStore.LoadStatus);
+        Assert.Equal("NewerPrimary", reloaded!.Files.Prefix);
+        Assert.True(lockedStore.CanSave);
+    }
+
+    [Fact]
+    public void PrimaryAppearingAfterDefaults_IsNotOverwritten()
+    {
+        var store = new SettingsStore(SettingsPath);
+        store.Load();
+        Assert.Equal(SettingsLoadStatus.CreatedDefaults, store.LoadStatus);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        var appeared = """{"schemaVersion":2,"files":{"prefix":"AppearedLater"}}""";
+        File.WriteAllText(SettingsPath, appeared);
+
+        var replacement = new AppSettings();
+        replacement.Files.Prefix = "Overwrite";
+        Assert.False(store.Save(replacement));
+        Assert.Equal(appeared, File.ReadAllText(SettingsPath));
+        Assert.Equal(SettingsLoadStatus.Unreadable, store.LoadStatus);
+    }
+
+    [Fact]
+    public void SaveAfterBackupRecovery_DoesNotRotateTheDamagedPrimaryIntoTheBackup()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var first = new AppSettings();
+        first.Files.Prefix = "FirstValid";
+        Assert.True(store.Save(first));
+        var second = new AppSettings();
+        second.Files.Prefix = "SecondValid";
+        Assert.True(store.Save(second));
+
+        File.WriteAllText(SettingsPath, "{ this is not json ");
+        var reopened = new SettingsStore(SettingsPath);
+        var loaded = reopened.Load();
+        Assert.Equal(SettingsLoadStatus.RecoveredFromBackup, reopened.LoadStatus);
+        loaded.Files.Prefix = "EditedFromBackup";
+        Assert.True(reopened.Save(loaded));
+
+        var backupText = File.ReadAllText(SettingsPath + ".bak");
+        var backup = SettingsStore.Deserialize(backupText);
+        Assert.NotNull(backup);
+        Assert.Equal("FirstValid", backup!.Files.Prefix);
+        Assert.DoesNotContain("this is not json", backupText);
+        Assert.Equal("EditedFromBackup", SettingsStore.Deserialize(File.ReadAllText(SettingsPath))!.Files.Prefix);
+    }
+
+    [Fact]
+    public void MalformedPrimaryWithUnreadableBackup_RefusesToGuessAndKeepsBothFiles()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var first = new AppSettings();
+        Assert.True(store.Save(first));
+        var second = new AppSettings();
+        Assert.True(store.Save(second));
+        File.WriteAllText(SettingsPath, "{ broken ");
+
+        using (new FileStream(SettingsPath + ".bak", FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            var reopened = new SettingsStore(SettingsPath);
+            reopened.Load();
+
+            Assert.Equal(SettingsLoadStatus.Unreadable, reopened.LoadStatus);
+            Assert.False(reopened.CanSave);
+            Assert.Equal("{ broken ", File.ReadAllText(SettingsPath));
+        }
+    }
+
+    [Fact]
+    public void CopyFrom_AdoptsEveryReloadedSectionIntoTheLiveInstance()
+    {
+        var live = new AppSettings();
+        live.Files.Prefix = "Stale";
+        var reloaded = new AppSettings { SchemaVersion = 7 };
+        reloaded.Files.Prefix = "Newest";
+        reloaded.Recording.SampleRate = 16000;
+        reloaded.Appearance.Theme = "vintagedark";
+        reloaded.Hotkeys = new List<HotkeySetting>();
+
+        live.CopyFrom(reloaded);
+
+        Assert.Same(reloaded.Files, live.Files);
+        Assert.Same(reloaded.Recording, live.Recording);
+        Assert.Same(reloaded.Notifications, live.Notifications);
+        Assert.Same(reloaded.Application, live.Application);
+        Assert.Same(reloaded.Appearance, live.Appearance);
+        Assert.Same(reloaded.Advanced, live.Advanced);
+        Assert.Same(reloaded.Window, live.Window);
+        Assert.Same(reloaded.Hotkeys, live.Hotkeys);
+        Assert.Equal(7, live.SchemaVersion);
+        Assert.Equal("Newest", live.Files.Prefix);
+    }
+
+    [Fact]
+    public void ReloadAdoptThenSave_PersistsTheNewestDocumentAcrossLaterSaves()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var newest = new AppSettings();
+        newest.Files.Prefix = "NewestOnDisk";
+        Assert.True(store.Save(newest));
+
+        SettingsStore locked;
+        using (new FileStream(SettingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            locked = new SettingsStore(SettingsPath);
+            locked.Load();
+            Assert.False(locked.CanSave);
+        }
+
+        Assert.True(locked.TryReloadAfterAccessRestored(out var reloaded));
+        Assert.NotNull(reloaded);
+        // The fixed caller adopts the reloaded document into the live object before saving.
+        var live = new AppSettings();
+        live.Files.Prefix = "StaleInMemory";
+        live.CopyFrom(reloaded!);
+        Assert.True(locked.Save(live));
+        // A later save (auto-save or shutdown) of the same live object must not undo the reload.
+        Assert.True(locked.Save(live));
+
+        var persisted = SettingsStore.Deserialize(File.ReadAllText(SettingsPath));
+        Assert.NotNull(persisted);
+        Assert.Equal("NewestOnDisk", persisted!.Files.Prefix);
+    }
+
+    [Fact]
     public void SaveAndLoad_RoundTripsValues()
     {
         var store = new SettingsStore(SettingsPath);

@@ -79,6 +79,7 @@ public partial class App : Application
 
     private void Compose(string[] args)
     {
+        var startupWatch = System.Diagnostics.Stopwatch.StartNew();
         _paths = PortableRoot.FromExecutable();
         _log = new FileLog(_paths.LogPath);
         _store = new SettingsStore(_paths.SettingsPath);
@@ -86,6 +87,7 @@ public partial class App : Application
         _log.Info($"FastVRecorder starting from {_paths.Root} (settings: {_store.LoadStatus})");
         _log.Enabled = _settings.Advanced.DiagnosticsLog;
         LogTraceListener.Attach(_log);
+        var settingsMs = startupWatch.ElapsedMilliseconds;
 
         var loc = Loc.Instance;
         var languageOverrides = LanguagePacks.LoadOverrides(_paths.LanguagesDir);
@@ -97,6 +99,7 @@ public partial class App : Application
         foreach (var problem in catalog.Problems) _log.Warn("Theme: " + problem);
         var theme = new ThemeService(catalog);
         theme.Apply(_settings.Appearance.Theme);
+        var themeMs = startupWatch.ElapsedMilliseconds;
 
         _history = new HistoryStore(_paths.HistoryPath);
         _history.Load();
@@ -145,7 +148,13 @@ public partial class App : Application
         _viewModel.RecoveryRetry = () => _recovery.RecoverAll();
         _viewModel.ShowHideRequested += () => _window.ToggleVisibility();
         _window.Show();
+        var windowMs = startupWatch.ElapsedMilliseconds;
         _viewModel.Initialize();
+        var initMs = startupWatch.ElapsedMilliseconds;
+        long processMs = -1;
+        try { processMs = (long)(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds; }
+        catch { /* process timing is best effort */ }
+        _log.Info($"Startup timing: settings={settingsMs} ms, language/theme={themeMs} ms, window-shown={windowMs} ms, initialized={initMs} ms, since-process-start={processMs} ms, managed={GC.GetTotalMemory(false) / (1024.0 * 1024.0):0.0} MB");
         if (_store.LoadStatus is SettingsLoadStatus.Unreadable or SettingsLoadStatus.ResetAfterCorruption
             or SettingsLoadStatus.RecoveredFromBackup or SettingsLoadStatus.PartiallyRecovered)
         {

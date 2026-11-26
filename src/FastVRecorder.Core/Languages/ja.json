@@ -205,6 +205,7 @@
     "Msg.NoAudio": "音声は録音されていませんでした。",
     "Msg.HotkeyConflict": "ショートカットの競合: ",
     "Msg.SettingsReadOnly": "ポータブル フォルダーは読み取り専用であるため、設定を保存できません。",
+    "Msg.SettingsReloaded": "settings.json が再び読み取れるようになり、ディスク上のコピーは保持されました。再読み込みされた設定を表示するには FastVRecorder を再起動してください。",
     "Msg.AlreadyRunning": "FastVRecorder はすでに実行されています。",
     "Msg.UnexpectedError": "予期しないエラー: ",
     "Msg.Copied": "コピーされました。",

@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Nu a fost înregistrat niciun sunet.",
     "Msg.HotkeyConflict": "Conflict de comenzi rapide: ",
     "Msg.SettingsReadOnly": "Setările nu pot fi salvate deoarece folderul portabil este doar pentru citire.",
+    "Msg.SettingsReloaded": "settings.json este din nou lizibil, iar copia de pe disc a fost păstrată. Reporniți FastVRecorder pentru a vedea setările recitite.",
     "Msg.AlreadyRunning": "FastVRecorder rulează deja.",
     "Msg.UnexpectedError": "Eroare neașteptată: ",
     "Msg.Copied": "Copiat.",

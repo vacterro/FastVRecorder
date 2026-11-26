@@ -11,6 +11,7 @@ Import-Module (Join-Path $PSScriptRoot 'PublishSafety.psm1') -Force
 
 Push-Location $root
 $staging = $null
+$stagingLease = $null
 try {
     $target = Resolve-PublishTarget -Output $Output -RepoRoot $root
     Assert-SafeTarget -Target $target -RepoRoot $root | Out-Null
@@ -23,10 +24,8 @@ try {
     }
 
     Remove-OwnedStaging -RepoRoot $root | Out-Null
-    $stagingRoot = Join-Path $root 'dist\.staging'
-    New-Item -ItemType Directory -Path $stagingRoot -Force | Out-Null
-    $staging = Join-Path $stagingRoot ('publish-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
-    New-Item -ItemType Directory -Path $staging -Force | Out-Null
+    $stagingLease = New-OwnedStaging -RepoRoot $root
+    $staging = $stagingLease.Path
 
     Write-Host "Publishing to isolated staging: $staging" -ForegroundColor Cyan
     dotnet publish src\FastVRecorder.App\FastVRecorder.App.csproj `
@@ -96,12 +95,15 @@ try {
     Write-Host 'Existing config/, Recordings/, custom themes, languages and cue assets were preserved.'
 }
 finally {
+    if ($stagingLease) {
+        Close-OwnedStaging -Staging $stagingLease
+    }
     if ($staging -and (Test-Path -LiteralPath $staging)) {
         if ($KeepStaging) {
             Write-Host "Staging kept for diagnosis: $staging" -ForegroundColor Yellow
         }
         else {
-            try { Remove-Item -LiteralPath $staging -Recurse -Force } catch { }
+            try { Remove-TreeSafely -Path $staging } catch { }
         }
     }
     Pop-Location

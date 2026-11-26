@@ -235,20 +235,22 @@ public sealed class RecordingEngineTests : TempDirectoryTest
     }
 
     [Fact]
-    public async Task RecoveryState_BlocksRecordingUntilTheScanEnds()
+    public async Task RecoveryScan_DoesNotBlockRecording()
     {
         var harness = CreateHarness();
         using var engine = harness.Engine;
 
         engine.BeginRecoveryScan();
         Assert.Equal(RecordingState.Recovering, engine.State);
-        Assert.False(await engine.StartAsync());
-        Assert.Equal(RecordingState.Recovering, engine.State);
-
-        engine.EndRecoveryScan();
-        Assert.Equal(RecordingState.Idle, engine.State);
         Assert.True(await engine.StartAsync());
+        Assert.Equal(RecordingState.Recording, engine.State);
+
+        // A scan that finishes while a session is active must not clobber that session.
+        engine.EndRecoveryScan();
+        Assert.Equal(RecordingState.Recording, engine.State);
+
         await engine.StopAsync();
+        Assert.Equal(RecordingState.Idle, engine.State);
     }
 
     [Fact]
@@ -322,8 +324,18 @@ public sealed class RecordingEngineTests : TempDirectoryTest
         engine.WriterLoopHook = () => release.Wait();
         var completed = false;
         var failed = new TaskCompletionSource<RecordingErrorEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var failures = 0;
         engine.Completed += (_, _) => completed = true;
-        engine.Error += (_, e) => failed.TrySetResult(e);
+        engine.Error += (_, e) =>
+        {
+            // The blocked StartAsync below deliberately reports a non-fatal refusal; only the
+            // session's terminal error may be counted once.
+            if (e.IsFatal)
+            {
+                Interlocked.Increment(ref failures);
+            }
+            failed.TrySetResult(e);
+        };
 
         Assert.True(await engine.StartAsync());
         await Task.Delay(100);
@@ -341,6 +353,10 @@ public sealed class RecordingEngineTests : TempDirectoryTest
         Assert.Single(Directory.GetFiles(harness.Folder, "*.wav"));
         Assert.Empty(Directory.GetFiles(harness.Folder, "*.wav.part"));
         Assert.False(completed);
+        Assert.Equal(1, Volatile.Read(ref failures));
+        var entry = Assert.Single(harness.History.Snapshot());
+        Assert.Equal("WAV", entry.Format);
+        Assert.False(string.IsNullOrWhiteSpace(entry.Note));
     }
 
     [Fact]

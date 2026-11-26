@@ -205,6 +205,7 @@
     "Msg.NoAudio": "No audio was recorded.",
     "Msg.HotkeyConflict": "Shortcut conflict: ",
     "Msg.SettingsReadOnly": "Settings cannot be saved because the portable folder is read-only.",
+    "Msg.SettingsReloaded": "settings.json became readable again and the on-disk copy was kept. Restart FastVRecorder to see the re-read settings.",
     "Msg.AlreadyRunning": "FastVRecorder is already running.",
     "Msg.UnexpectedError": "Unexpected error: ",
     "Msg.Copied": "Copied.",

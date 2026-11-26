@@ -205,6 +205,7 @@
     "Msg.NoAudio": "لم يتم تسجيل أي صوت.",
     "Msg.HotkeyConflict": "صراع الاختصار: ",
     "Msg.SettingsReadOnly": "لا يمكن حفظ الإعدادات لأن المجلد المحمول للقراءة فقط.",
+    "Msg.SettingsReloaded": "أصبح ملف settings.json قابلاً للقراءة مجدداً وتم الاحتفاظ بالنسخة الموجودة على القرص. أعد تشغيل FastVRecorder لرؤية الإعدادات المعاد قراءتها.",
     "Msg.AlreadyRunning": "FastVRecorder قيد التشغيل بالفعل.",
     "Msg.UnexpectedError": "خطأ غير متوقع: ",
     "Msg.Copied": "منقول.",

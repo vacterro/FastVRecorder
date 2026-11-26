@@ -27,6 +27,7 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
+- [/] T-12 [P2] FastVRecorder SAIHANDOFF-3 MODE 2 final reliability audit: P0 publish manifest path containment, P0/P1 safe package update transaction, P1 deferred finalizat... | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-009 | owner: saipen | claim_time: 2026-11-26T10:26:31Z
 
 ## TODO
 

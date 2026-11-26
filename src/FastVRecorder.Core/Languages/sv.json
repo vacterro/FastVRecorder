@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Inget ljud spelades in.",
     "Msg.HotkeyConflict": "Genvägskonflikt: ",
     "Msg.SettingsReadOnly": "Inställningarna kan inte sparas eftersom den bärbara mappen är skrivskyddad.",
+    "Msg.SettingsReloaded": "settings.json är läsbart igen och kopian på disken behölls. Starta om FastVRecorder för att se de omlästa inställningarna.",
     "Msg.AlreadyRunning": "FastVRecorder är redan igång.",
     "Msg.UnexpectedError": "Oväntat fel: ",
     "Msg.Copied": "Kopierade.",

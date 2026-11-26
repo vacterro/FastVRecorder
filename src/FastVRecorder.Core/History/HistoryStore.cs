@@ -145,17 +145,21 @@ public sealed class HistoryStore
     /// <summary>Marks missing files (does not delete entries). Safe to call off the UI thread.</summary>
     public void RefreshExistence()
     {
-        List<HistoryEntry> copy;
-        lock (_lock) copy = _entries.ToList();
-        foreach (var e in copy)
+        // Mutate only under the store lock: Save() serializes the same entry objects under
+        // this lock, so writing Missing/SizeBytes outside it could persist a half-updated or
+        // torn view of the index.
+        lock (_lock)
         {
-            try
+            foreach (var e in _entries)
             {
-                var fi = new FileInfo(e.Path);
-                e.Missing = !fi.Exists;
-                if (fi.Exists) e.SizeBytes = fi.Length;
+                try
+                {
+                    var fi = new FileInfo(e.Path);
+                    e.Missing = !fi.Exists;
+                    if (fi.Exists) e.SizeBytes = fi.Length;
+                }
+                catch { e.Missing = true; }
             }
-            catch { e.Missing = true; }
         }
         Changed?.Invoke(this, EventArgs.Empty);
     }

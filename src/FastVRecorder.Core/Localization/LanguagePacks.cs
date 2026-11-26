@@ -13,19 +13,24 @@ public sealed class LanguagePack
 /// <summary>
 /// Loads the embedded UI language packs (JSON under Languages/) and optional portable overrides
 /// from &lt;app&gt;/languages. English is the fallback for every missing key.
+///
+/// Packs are parsed lazily: startup pays only for English and the active language, while
+/// <see cref="All"/>/<see cref="EnsureLoaded"/> still materialize every pack for tooling and
+/// completeness tests.
 /// </summary>
 public static class LanguagePacks
 {
     private const string ResourcePrefix = "FastVRecorder.Core.Languages.";
     private static readonly object Sync = new();
-    private static Dictionary<string, LanguagePack>? _packs;
+    // Case-insensitive so a pack file's own `code` casing can never create a duplicate.
+    private static readonly Dictionary<string, LanguagePack> Packs = new(StringComparer.OrdinalIgnoreCase);
     private static readonly List<string> Problems = new();
+    private static bool _diagnosed;
 
     public static IReadOnlyList<string> LoadProblems
     {
         get
         {
-            EnsureLoaded();
             lock (Sync) return Problems.ToList();
         }
     }
@@ -34,8 +39,8 @@ public static class LanguagePacks
     {
         get
         {
-            EnsureLoaded();
-            return _packs!["en"].Strings;
+            EnsureEnglish();
+            lock (Sync) return Packs["en"].Strings;
         }
     }
 
@@ -43,81 +48,137 @@ public static class LanguagePacks
     {
         get
         {
-            EnsureLoaded();
-            return _packs!.Values.ToList();
+            EnsureAll();
+            lock (Sync) return Packs.Values.ToList();
         }
     }
 
     public static LanguagePack? Find(string? code)
     {
         if (string.IsNullOrWhiteSpace(code)) return null;
-        EnsureLoaded();
-        return _packs!.TryGetValue(code, out var pack) ? pack : null;
+        EnsurePack(code);
+        lock (Sync) return Packs.TryGetValue(code, out var pack) ? pack : null;
     }
 
     public static string Translate(string? code, string key)
     {
-        EnsureLoaded();
-        if (!string.IsNullOrWhiteSpace(code) &&
-            _packs!.TryGetValue(code, out var pack) &&
-            pack.Strings.TryGetValue(key, out var value))
+        EnsureEnglish();
+        if (!string.IsNullOrWhiteSpace(code) && !string.Equals(code, "en", StringComparison.OrdinalIgnoreCase))
         {
-            return value;
+            EnsurePack(code);
         }
 
-        return _packs!["en"].Strings.TryGetValue(key, out var english) ? english : key;
-    }
-
-    public static void EnsureLoaded()
-    {
-        if (_packs is not null) return;
         lock (Sync)
         {
-            if (_packs is not null) return;
-            var packs = new Dictionary<string, LanguagePack>(StringComparer.OrdinalIgnoreCase);
-            var assembly = typeof(LanguagePacks).Assembly;
-            foreach (var resource in assembly.GetManifestResourceNames())
+            if (!string.IsNullOrWhiteSpace(code) &&
+                Packs.TryGetValue(code, out var pack) &&
+                pack.Strings.TryGetValue(key, out var value))
             {
-                if (!resource.StartsWith(ResourcePrefix, StringComparison.Ordinal) ||
-                    !resource.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var code = resource[ResourcePrefix.Length..^".json".Length];
-                try
-                {
-                    using var stream = assembly.GetManifestResourceStream(resource);
-                    if (stream is null) continue;
-                    using var reader = new StreamReader(stream);
-                    var pack = Parse(reader.ReadToEnd(), code, resource);
-                    if (pack is not null) packs[code] = pack;
-                }
-                catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)
-                {
-                    Problems.Add($"{resource}: {ex.Message}");
-                }
+                return value;
             }
 
-            if (!packs.TryGetValue("en", out var english))
+            return Packs["en"].Strings.TryGetValue(key, out var english) ? english : key;
+        }
+    }
+
+    /// <summary>Materializes every embedded pack (tests, tooling, diagnostics).</summary>
+    public static void EnsureLoaded()
+    {
+        EnsureAll();
+    }
+
+    private static void EnsureEnglish()
+    {
+        lock (Sync)
+        {
+            if (!Packs.ContainsKey("en"))
+            {
+                LoadEmbeddedPackLocked("en");
+            }
+
+            if (!Packs.ContainsKey("en"))
             {
                 throw new InvalidOperationException("The embedded English language pack is missing.");
             }
+        }
+    }
 
-            foreach (var (code, pack) in packs)
+    private static void EnsurePack(string code)
+    {
+        EnsureEnglish();
+        lock (Sync)
+        {
+            if (Packs.ContainsKey(code)) return;
+            LoadEmbeddedPackLocked(code);
+        }
+    }
+
+    private static void EnsureAll()
+    {
+        EnsureEnglish();
+        var assembly = typeof(LanguagePacks).Assembly;
+        var codes = assembly.GetManifestResourceNames()
+            .Where(resource => resource.StartsWith(ResourcePrefix, StringComparison.Ordinal) &&
+                               resource.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .Select(resource => resource[ResourcePrefix.Length..^".json".Length])
+            .ToList();
+        lock (Sync)
+        {
+            foreach (var code in codes)
             {
-                var missing = english.Strings.Keys.Count(k => !pack.Strings.ContainsKey(k));
-                if (missing > 0) Problems.Add($"{code}: {missing} key(s) fall back to English.");
+                if (!Packs.ContainsKey(code))
+                {
+                    LoadEmbeddedPackLocked(code);
+                }
             }
 
-            _packs = packs;
+            DiagnoseLocked();
+        }
+    }
+
+    private static void LoadEmbeddedPackLocked(string code)
+    {
+        var assembly = typeof(LanguagePacks).Assembly;
+        var wanted = ResourcePrefix + code + ".json";
+        var resource = assembly.GetManifestResourceNames()
+            .FirstOrDefault(name => string.Equals(name, wanted, StringComparison.OrdinalIgnoreCase));
+        if (resource is null) return;
+        try
+        {
+            using var stream = assembly.GetManifestResourceStream(resource);
+            if (stream is null) return;
+            using var reader = new StreamReader(stream);
+            var pack = Parse(reader.ReadToEnd(), code, resource);
+            if (pack is not null)
+            {
+                Packs[pack.Code] = pack;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)
+        {
+            Problems.Add($"{resource}: {ex.Message}");
+        }
+    }
+
+    private static void DiagnoseLocked()
+    {
+        if (_diagnosed) return;
+        _diagnosed = true;
+        if (!Packs.TryGetValue("en", out var english)) return;
+        foreach (var (code, pack) in Packs)
+        {
+            var missing = english.Strings.Keys.Count(key => !pack.Strings.ContainsKey(key));
+            if (missing > 0)
+            {
+                Problems.Add($"{code}: {missing} key(s) fall back to English.");
+            }
         }
     }
 
     /// <summary>Reads loose &lt;app&gt;/languages/*.json files; returns how many packs were replaced.</summary>
     public static int LoadOverrides(string? directory)
     {
-        EnsureLoaded();
+        EnsureEnglish();
         if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return 0;
         var applied = 0;
         foreach (var file in Directory.EnumerateFiles(directory, "*.json").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
@@ -127,15 +188,16 @@ public static class LanguagePacks
             {
                 var pack = Parse(File.ReadAllText(file), code, file);
                 if (pack is null) continue;
+                EnsurePack(pack.Code);
                 lock (Sync)
                 {
-                    if (_packs!.TryGetValue(pack.Code, out var embedded))
+                    if (Packs.TryGetValue(pack.Code, out var embedded))
                     {
                         // Portable overrides are partial by design: they replace keys, not the
                         // entire pack, so new embedded keys keep working after an app update.
                         var merged = new Dictionary<string, string>(embedded.Strings, StringComparer.Ordinal);
                         foreach (var (key, value) in pack.Strings) merged[key] = value;
-                        _packs[pack.Code] = new LanguagePack
+                        Packs[pack.Code] = new LanguagePack
                         {
                             Code = pack.Code,
                             Strings = merged,
@@ -144,7 +206,7 @@ public static class LanguagePacks
                     }
                     else
                     {
-                        _packs[pack.Code] = pack;
+                        Packs[pack.Code] = pack;
                     }
                 }
 

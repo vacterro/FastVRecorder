@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Ekkert hljóð var tekið upp.",
     "Msg.HotkeyConflict": "Flýtileiðarátök: ",
     "Msg.SettingsReadOnly": "Ekki er hægt að vista stillingar vegna þess að færanlega mappan er skrifvarinn.",
+    "Msg.SettingsReloaded": "settings.json er aftur læsilegt og afritið á disknum var varðveitt. Endurræstu FastVRecorder til að sjá stillingarnar sem voru lesnar aftur.",
     "Msg.AlreadyRunning": "FastVRecorder er þegar í gangi.",
     "Msg.UnexpectedError": "Óvænt villa: ",
     "Msg.Copied": "Afritað.",

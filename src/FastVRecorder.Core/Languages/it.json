@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Non è stato registrato alcun audio.",
     "Msg.HotkeyConflict": "Conflitto di scorciatoie: ",
     "Msg.SettingsReadOnly": "Impossibile salvare le impostazioni perché la cartella portatile è di sola lettura.",
+    "Msg.SettingsReloaded": "settings.json è di nuovo leggibile e la copia su disco è stata conservata. Riavviare FastVRecorder per vedere le impostazioni rilette.",
     "Msg.AlreadyRunning": "FastVRecorder è già in esecuzione.",
     "Msg.UnexpectedError": "Errore imprevisto: ",
     "Msg.Copied": "Copiato.",

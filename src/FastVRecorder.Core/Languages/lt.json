@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Garso įrašas nebuvo įrašytas.",
     "Msg.HotkeyConflict": "Nuorodų konfliktas: ",
     "Msg.SettingsReadOnly": "Nustatymų išsaugoti negalima, nes nešiojamasis aplankas yra tik skaitomas.",
+    "Msg.SettingsReloaded": "settings.json vėl perskaitomas, o diske esanti kopija išsaugota. Paleiskite FastVRecorder iš naujo, kad matytumėte iš naujo įskaitytus nustatymus.",
     "Msg.AlreadyRunning": "FastVRecorder jau veikia.",
     "Msg.UnexpectedError": "Netikėta klaida: ",
     "Msg.Copied": "Nukopijuota.",

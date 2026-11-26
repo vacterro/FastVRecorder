@@ -1,6 +1,11 @@
 {
-  "active": {},
-  "next_id": 9,
+  "active": {
+    "SRC-009": {
+      "linked_work": "T-12",
+      "source_sha256": "70d3abb40e104e241a236bb27590eff33462c42b8f620851f34cac672d2e573f"
+    }
+  },
+  "next_id": 10,
   "schema_version": 1,
   "tombstones": {
     "SRC-001": {

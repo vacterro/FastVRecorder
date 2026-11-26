@@ -259,14 +259,42 @@ section 16. All requirements in the captured body are covered below.
 | Item | Evidence |
 |---|---|
 | Solution builds in Release | `dotnet build FastVRecorder.sln -c Release` — success |
-| Automated tests | 89 core + 38 integration = **127 passed**, 0 failed |
+| Automated tests | 97 core + 44 integration = **141 passed**, 0 failed |
 | Portable publish | `scripts/Publish.ps1` → `dist/FastVRecorder` with self-contained `FastVRecorder.exe` |
 | UI smoke | live windows captured: Recorder, History, Hotkeys, Settings (all sections), Golden Default, Vintage Dark, English, Russian, System Default microphone, 35 % notification volume |
 | UI languages | 33 language packs (`LanguageTests`), native-name selector, Arabic RTL, portable overrides; 31 are machine-translated with English fallback |
-| Version | 0.0.3 (`Directory.Build.props`, UI footer, CHANGELOG) |
+| Version | 0.0.4 (`Directory.Build.props`, UI footer, CHANGELOG) |
 | Real hardware capture | The published build recorded real multi-second WAV files from the ATR2100x-USB endpoint (48 kHz mono 16-bit, verified headers); after the queue fix a live recording contained peak 13925 / RMS 1537, not silence. |
 | Notification output | `Notification 'start' -> WASAPI output 'Realtek Digital Output'` logged from the Preview button with the selector set; WaveOut fallback tested. |
 | Manual folder entry | Editable field + Save/Enter/LostFocus; `RecordingFolderResolver` tests cover empty, relative, absolute and environment-variable paths. |
 | 33 languages | `LanguageTests` verifies all 33 embedded packs, native names, Arabic RTL, English fallback, portable overrides; German/Chinese/Arabic UI captured. |
 | Crash recovery on real audio | Process killed mid-recording; next launch rebuilt `2026-11-26_06-54-49_RECOVERED.wav` from the 353,580-byte part and indexed it as Recovered. |
 | Input signal diagnosis (historical) | Before the queue fix the ATR2100x endpoint appeared near-silent because the ring buffer wrote at the read cursor. After the fix the same endpoint produced peak 13925 / RMS 1537; the in-app test now distinguishes real silence from an engine failure. |
+
+## 18. Final reliability audit (0.0.4 / SAIHANDOFF-3)
+
+Scope: publication trust, interrupted-update recovery, deferred writer completion, recovery
+identity, settings load/backup safety, MP3/History reconciliation and honest performance numbers.
+Historical hardware rows above describe earlier builds; they are not re-verified here.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Manifest paths cannot escape the publication root | Verified | `Test-PublishSafety.ps1` rejects parent traversal, rooted/UNC paths, alternate data streams, reserved device names, ambiguous segments, case-insensitive duplicates and non-SHA-256 digests before any mutation; canonical containment is proven per destination |
+| Damaged manifests fail closed | Verified | corrupted, traversal, rooted and bad-digest manifests refuse the publication; user bytes unchanged; sentinel outside the target untouched |
+| Reparse points cannot redirect writes or deletes | Verified | destination junction, existing destination file/ancestor checks; `destination under a junction refused`, sentinel untouched; file/manifest symlink cases covered when the host permits symlink creation (2 skipped otherwise) |
+| Unknown user files are never silently replaced | Verified | unowned collision and user-modified owned collision both refuse; bytes preserved; obsolete artifacts deleted only when their hash matches the previous manifest |
+| Interrupted publication is recoverable | Verified | injected faults at first copy, mid-copy, manifest replacement and deletion all roll back to the previous generation; journal/backup cleaned; retry succeeds; direct journal repair restores bytes, removes unowned output and restores the manifest |
+| Concurrent publication is refused | Verified | exclusive target lock: a held lock refuses the second publish, first-run target unchanged, publish succeeds after release |
+| Staging ownership is proven, not named | Verified | marker + nonce + repository identity + exclusive lease: active and foreign staging are preserved, released owned staging is removed; an unmarked `publish-*` folder is never deleted |
+| Uninspectable running process blocks publish | Implemented | `Assert-RuntimeNotRunning` refuses when a `FastVRecorder` process path cannot be read (not exercisable without such a process) |
+| Deferred finalization cannot strand a session | Verified | `WriterTimeout_...` test: timeout reports once, writer exit finalizes through the shared completion path, History gets one WAV entry, state returns to Idle, no duplicate terminal event; gate retries and crash reconciliation are code-reviewed |
+| MP3/History reconciliation | Verified | MP3 test asserts one MP3 history entry and no WAV; missing segment, post-encode metadata failure and failed WAV deletion are handled without losing discoverability; existence refresh is lock-safe |
+| Recovery verifies output identity | Verified | marker/adoption tests: unrelated same-length PCM, arbitrary external path and advisory metadata are refused and rebuilt from the part; matching PCM identity adopts without a duplicate; junction folders are never scanned; concurrent `RecoverAll` produces exactly one output |
+| Settings locks cannot replace newer settings | Verified | unreadable primary + valid backup stays readonly with backup values in memory; primary appearing after defaults is not overwritten; damaged primary never rotates into the backup; access restored in-window re-reads the primary |
+| A post-backup user edit survives a refused publication | Verified | `late-edit`, `late-edit-other-entry` and the two direct-repair tests: rollback is conditioned on journaled pre-image/new hashes, so an edit on the failing entry, on another entry, or before the new hash was journaled is preserved; only this transaction's output or its verified pre-image is restored/deleted |
+| Recovery does not block recording | Verified | `RecoveryScan_DoesNotBlockRecording`: `StartAsync` succeeds during the scan, `EndRecoveryScan` does not clobber the active session, and the scan skips the engine's active part |
+| Fast feedback preserved | Verified | 141 tests in ≈ 5 s (97 Core ≈ 0.9 s, 44 Integration ≈ 4 s); publish safety 139 assertions ≈ 3 s |
+| Performance measured honestly | Measured | visible window 1.5–2.6 s warm (phase log: settings ≈ 20 ms, language/theme ≈ 65 ms); managed heap ≈ 12.5 MB; tray working set ≈ 158 MB (0.0.2 baseline 170.3 MB); tray idle CPU 0.00–0.05 s / 30 s; MP3 probe deferred (39–47 ms logged after show); language packs lazy (all-34 parse ≈ 23 ms vs en-only ≈ 0.7 ms) |
+| Real hardware acceptance on 0.0.4 | NOT VERIFIED | this host exposes no capture endpoint (`No default capture endpoint: Core Audio error 0x80070490`, microphone list = 1 default placeholder); no physical recording was claimed |
+| Release artifact (0.0.4) | Built and verified | `release/FastVRecorder-0.0.4-win-x64.zip`, 71,205,871 bytes, SHA-256 `5C54590B68FC4CDB08C3547368ECA03FFE856F06BD4E5C2D1C04D2DD60210BEA`, 343 entries (342 manifest files + manifest); packaged strictly from manifest-owned files with hash verification; no `config/`, `Recordings/`, logs or `.fvr-update`; clean extraction launched in 1.45 s with a bogus `DOTNET_ROOT` (self-contained); app exe SHA-256 `D79917C6FAFB851995DAF5CEC420F109C32C7BC223C7338A3393E15C6CC032EA` |
+| Publication state | Pending by design | origin/main and tag publication are reconciled through the SAIPEN cohort workflow; no cohort release batch exists and no public GitHub Release was created |

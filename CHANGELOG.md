@@ -2,6 +2,70 @@
 
 All notable changes to FastVRecorder are recorded here.
 
+## 0.0.4 — 2026-11-26
+
+Final reliability audit (SAIHANDOFF-3): publication trust, recovery identity and settings safety.
+
+### Security and publication
+- The publish manifest now has a strict relative-path contract: parent traversal, rooted/UNC
+  paths, alternate data streams, reserved device names, ambiguous segments, invalid digests and
+  case-insensitive duplicates are rejected before any mutation. Every destination is proven to
+  stay inside the authorized root.
+- A damaged or missing manifest can no longer authorize a destructive legacy update; unowned or
+  user-modified destination files are refused instead of overwritten.
+- Reparse points are refused on every existing destination file and ancestor, so a junction or
+  symlink cannot redirect a write or a deletion.
+- Updates are transaction journaled: complete preflight, per-file atomic replacement, preserved
+  previous generation and automatic rollback on failure or interruption. A concurrent publish is
+  refused by an exclusive target lock, and staging ownership is proven by a marker plus a live
+  lease instead of a folder-name prefix.
+- Publishing refuses to proceed when a running FastVRecorder process cannot be inspected.
+- Rollback is hash-conditioned: the journal records each published file's new hash, and a
+  rollback restores or deletes only bytes this transaction wrote (or its verified pre-image).
+  A file edited after its backup is preserved as a newer local edit instead of being overwritten.
+
+### Recording completion
+- Deferred writer finalization now shares the single completion path with the normal stop route:
+  it retries gate acquisition, reconciles History and state to Idle, never emits a duplicate
+  terminal event or a false success cue, and always clears the pending flag even after a crash.
+- Application exit while deferred finalization is pending waits for it and records a precise
+  recovery message when the partial file must be recovered on the next launch.
+- MP3 conversion indexes the intermediate WAV before encoding, records a missing segment instead
+  of silently skipping it, tolerates post-encode metadata I/O errors, and keeps/indexes the WAV
+  when it cannot be removed after a successful conversion.
+- `HistoryStore.RefreshExistence` updates entries under the same lock that serializes saves.
+
+### Recovery
+- Recovery markers and metadata are advisory. A surviving output is trusted only when its PCM
+  SHA-256 payload matches the partial recording's payload and its path is the canonical sibling
+  `_RECOVERED.wav`; arbitrary, external, damaged or unrelated same-length files are rebuilt from
+  the original audio.
+- Unrecoverable markers are bound to the partial file's length, folder scans never follow
+  junctions, and `RecoverAll` is serialized (process and cross-session) so a startup scan and
+  Retry cannot duplicate output. A crash-recovery scan no longer blocks starting a recording.
+
+### Settings
+- Explicit Missing/Readable/AccessDenied/SharingViolation/IoError states distinguish a missing
+  document from an inaccessible one. An unreadable primary with a valid backup keeps the backup
+  in memory but stays read-only, so the newer primary can never be overwritten by older state.
+- A damaged primary is never rotated into the last valid backup, a settings file that appears
+  after a defaults load is not overwritten, and access restored inside the same window is
+  re-read instead of discarded.
+
+### Performance
+- Language packs load lazily (English plus the active language); Media Foundation probing runs
+  after the window is visible. Startup now writes a phase-timing diagnostic line.
+- Measured on this host: window visible in 1.5–2.6 s (settings ≈ 20 ms, language/theme ≈ 65 ms),
+  managed heap ≈ 12.5 MB, tray working set ≈ 158 MB (0.0.2 baseline 170.3 MB), tray idle CPU
+  0.00–0.05 s per 30 s. Real microphone acceptance is NOT VERIFIED: this host exposes no capture
+  endpoint (`Core Audio error 0x80070490`).
+
+### Tests
+- 141 xUnit tests (97 Core + 44 Integration), including reparse refusal, interrupted-publication
+  rollback, publish locking, recovery identity/adoption, junction scans, unreadable-primary
+  settings and recovery-race coverage.
+- Publish-safety suite covers 139 assertions on PowerShell 7 and Windows PowerShell 5.1.
+
 ## 0.0.3 — 2026-11-26
 
 Review follow-up for trusted recordings.

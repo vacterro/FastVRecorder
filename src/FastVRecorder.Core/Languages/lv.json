@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Audio netika ierakstīts.",
     "Msg.HotkeyConflict": "Īsinājumtaustiņu konflikts: ",
     "Msg.SettingsReadOnly": "Iestatījumus nevar saglabāt, jo portatīvā mape ir tikai lasāma.",
+    "Msg.SettingsReloaded": "settings.json atkal ir lasāms, un diskā esošā kopija tika saglabāta. Restartējiet FastVRecorder, lai redzētu atkārtoti nolasītos iestatījumus.",
     "Msg.AlreadyRunning": "FastVRecorder jau darbojas.",
     "Msg.UnexpectedError": "Negaidīta kļūda: ",
     "Msg.Copied": "Kopēts.",

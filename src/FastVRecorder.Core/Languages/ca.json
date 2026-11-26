@@ -205,6 +205,7 @@
     "Msg.NoAudio": "No s'ha gravat cap àudio.",
     "Msg.HotkeyConflict": "Conflicte de drecera: ",
     "Msg.SettingsReadOnly": "La configuració no es pot desar perquè la carpeta portàtil és només de lectura.",
+    "Msg.SettingsReloaded": "settings.json torna a ser llegible i s'ha conservat la còpia del disc. Reinicieu FastVRecorder per veure la configuració rellegida.",
     "Msg.AlreadyRunning": "FastVRecorder ja s'està executant.",
     "Msg.UnexpectedError": "Error inesperat: ",
     "Msg.Copied": "Copiat.",

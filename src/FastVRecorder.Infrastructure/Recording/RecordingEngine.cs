@@ -55,6 +55,10 @@ public sealed class RecordingEngine : IDisposable
     private string? _incompleteReason;
     private ManualResetEventSlim? _writerDone;
     private bool _pendingWriterFinalization;
+    private string? _pendingStopReason;
+    private bool _pendingStopFailure;
+    private ManualResetEventSlim? _deferredDone;
+    private volatile bool _deferredCanceled;
     private TimeSpan _writerJoinTimeout = TimeSpan.FromSeconds(25);
     internal Action? WriterLoopHook;
 
@@ -193,6 +197,11 @@ public sealed class RecordingEngine : IDisposable
 
     private bool StartCore()
     {
+        if (_disposed)
+        {
+            return false;
+        }
+
         if (!_gate.Wait(TimeSpan.FromSeconds(20)))
         {
             return false;
@@ -224,7 +233,9 @@ public sealed class RecordingEngine : IDisposable
                 return false;
             }
 
-            if (State is not (RecordingState.Idle or RecordingState.Error))
+            // A crash-recovery scan runs in the background; it must never block recording.
+            // Recovery skips this engine's active part via IsPartActive, so both can overlap.
+            if (State is not (RecordingState.Idle or RecordingState.Error or RecordingState.Recovering))
             {
                 return false;
             }
@@ -370,6 +381,8 @@ public sealed class RecordingEngine : IDisposable
         if (!stopped)
         {
             _pendingWriterFinalization = true;
+            _pendingStopReason = "A failed start left a writer thread alive";
+            _pendingStopFailure = true;
             _incomplete = true;
             _incompleteReason = "A failed start left a writer thread alive; its partial file is preserved and no new recording may start until it exits.";
             LastError = _incompleteReason;
@@ -519,6 +532,8 @@ public sealed class RecordingEngine : IDisposable
         if (!stopped)
         {
             _pendingWriterFinalization = true;
+            _pendingStopReason = reason;
+            _pendingStopFailure = failure;
             _incomplete = true;
             _incompleteReason = $"The recording writer did not stop within {_writerJoinTimeout.TotalSeconds:0.#} s. Partial audio is preserved for recovery; no new recording will start until the writer finishes.";
             LastError = _incompleteReason;
@@ -538,7 +553,15 @@ public sealed class RecordingEngine : IDisposable
         FinishStoppedSession(reason, failure);
     }
 
-    private void FinishStoppedSession(string? reason, bool failure)
+    private void FinishStoppedSession(string? reason, bool failure) =>
+        CompleteSession(reason, failure, raiseTerminalEvent: true);
+
+    /// <summary>
+    /// One authoritative completion path for both the immediate stop route and the deferred
+    /// writer route. The deferred route suppresses the terminal event because the timeout
+    /// already published one; it still finalizes, encodes, updates History and returns to Idle.
+    /// </summary>
+    private void CompleteSession(string? reason, bool failure, bool raiseTerminalEvent)
     {
         string? finalizeError = null;
         try
@@ -595,24 +618,42 @@ public sealed class RecordingEngine : IDisposable
             }
 
             LastOutputPath = files[^1];
-            if (outcome != RecordingOutcome.Success)
+            if (raiseTerminalEvent)
             {
+                if (outcome != RecordingOutcome.Success)
+                {
+                    foreach (var file in files)
+                    {
+                        _history.Update(file, entry => entry.Note = note);
+                    }
+                }
+            }
+            else
+            {
+                var deferredNote = note ?? "Saved after a delayed writer shutdown.";
                 foreach (var file in files)
                 {
-                    _history.Update(file, entry => entry.Note = note);
+                    _history.Update(file, entry => entry.Note ??= deferredNote);
                 }
             }
 
-            Completed?.Invoke(this, new RecordingCompletedEventArgs
+            if (raiseTerminalEvent)
             {
-                FilePath = files[^1],
-                Duration = TotalDuration(),
-                SizeBytes = size,
-                Files = files,
-                Note = note,
-                SessionId = _sessionId,
-                Outcome = outcome,
-            });
+                Completed?.Invoke(this, new RecordingCompletedEventArgs
+                {
+                    FilePath = files[^1],
+                    Duration = TotalDuration(),
+                    SizeBytes = size,
+                    Files = files,
+                    Note = note,
+                    SessionId = _sessionId,
+                    Outcome = outcome,
+                });
+            }
+            else
+            {
+                _log.Info($"Deferred completion reconciled without a duplicate terminal event ({outcome}): {files[^1]}");
+            }
         }
         else
         {
@@ -620,13 +661,20 @@ public sealed class RecordingEngine : IDisposable
                 ? reason ?? "Recording failed before any audio could be saved."
                 : "No audio was recorded; nothing was saved.";
             LastError = message;
-            Error?.Invoke(this, new RecordingErrorEventArgs
+            if (raiseTerminalEvent)
             {
-                Message = message,
-                IsFatal = true,
-                SessionId = _sessionId,
-                Outcome = outcome,
-            });
+                Error?.Invoke(this, new RecordingErrorEventArgs
+                {
+                    Message = message,
+                    IsFatal = true,
+                    SessionId = _sessionId,
+                    Outcome = outcome,
+                });
+            }
+            else
+            {
+                _log.Warn("Deferred completion found no saved audio: " + message);
+            }
         }
 
         if (outcome != RecordingOutcome.Success)
@@ -681,65 +729,55 @@ public sealed class RecordingEngine : IDisposable
 
     /// <summary>
     /// A timed-out writer still owns the active writer/queue/target. Wait for it to exit, then
-    /// finalize under the gate. Recording stays blocked until this completes.
+    /// run the SAME completion path under the gate. Gate acquisition retries until it succeeds
+    /// (or the application shuts down); a crash inside the deferred work always reconciles the
+    /// engine back to Idle with a recoverable partial file instead of stranding the session.
     /// </summary>
     private void StartDeferredFinalization()
     {
         var writerDone = _writerDone;
         if (writerDone is null) return;
 
+        var deferredDone = new ManualResetEventSlim(false);
+        _deferredDone = deferredDone;
         ThreadPool.QueueUserWorkItem(_ =>
         {
+            var gateHeld = false;
             try
             {
                 writerDone.Wait();
-                if (!_gate.Wait(TimeSpan.FromSeconds(60)))
+                while (!gateHeld)
                 {
-                    _log.Error("Deferred writer finalization could not acquire the engine gate.");
-                    return;
+                    if (_deferredCanceled)
+                    {
+                        _log.Error("Deferred writer finalization abandoned at shutdown; the .part and recovery journal were preserved for the next launch.");
+                        return;
+                    }
+
+                    gateHeld = _gate.Wait(TimeSpan.FromSeconds(10));
+                    if (!gateHeld)
+                    {
+                        _log.Warn("Deferred writer finalization is still waiting for the engine gate.");
+                    }
                 }
 
                 try
                 {
                     if (!_pendingWriterFinalization) return;
-                    var finalizeError = (string?)null;
                     try
                     {
-                        FinalizeCurrentSegment();
+                        CompleteSession(_pendingStopReason, _pendingStopFailure, raiseTerminalEvent: false);
                     }
                     catch (Exception ex)
                     {
-                        finalizeError = ex.Message;
-                        _log.Error("Deferred finalization failed; partial data remains recoverable", ex);
+                        _log.Error("Deferred finalization failed; forcing a recoverable Idle state", ex);
+                        LastError = "Deferred finalization failed. The partial audio is preserved for recovery.";
+                        _pendingWriterFinalization = false;
+                        _incomplete = false;
+                        _incompleteReason = null;
+                        Transition(RecordingState.Idle);
+                        ResetSession();
                     }
-
-                    if (_outputFormat == OutputFormat.Mp3 && _segments.Count > 0)
-                    {
-                        var encodeError = EncodeSegments();
-                        if (encodeError is not null && finalizeError is null)
-                        {
-                            finalizeError = "MP3 encoding failed: " + encodeError;
-                        }
-                    }
-
-                    var files = _completedFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-                    if (files.Count > 0)
-                    {
-                        LastOutputPath = files[^1];
-                        foreach (var file in files)
-                        {
-                            _history.Update(file, entry => entry.Note ??= "Saved after a delayed writer shutdown.");
-                        }
-                        _log.Info("Deferred writer finalization completed: " + files[^1]);
-                    }
-                    else
-                    {
-                        LastError = finalizeError ?? "The writer exited but no completed audio file remained; the .part data is recoverable.";
-                        _log.Error(LastError);
-                    }
-
-                    Transition(RecordingState.Idle);
-                    ResetSession();
                 }
                 finally
                 {
@@ -750,43 +788,80 @@ public sealed class RecordingEngine : IDisposable
             {
                 _log.Error("Deferred writer finalization crashed", ex);
             }
+            finally
+            {
+                deferredDone.Set();
+            }
         });
     }
 
     private string? EncodeSegments()
     {
         string? firstError = null;
-        var settings = _settings();
         foreach (var segment in _segments.ToList())
         {
-            if (!File.Exists(segment.WavPath))
+            var wavPath = segment.WavPath;
+            if (!File.Exists(wavPath))
             {
+                firstError ??= "A recorded segment is missing: " + Path.GetFileName(wavPath);
+                _log.Error(firstError);
                 continue;
             }
 
-            var mp3Path = Path.ChangeExtension(segment.WavPath, ".mp3");
+            var mp3Path = Path.ChangeExtension(wavPath, ".mp3");
             if (File.Exists(mp3Path))
             {
                 mp3Path = FileNamer.NextFreePath(mp3Path);
             }
 
-            if (Mp3Encoder.TryEncode(segment.WavPath, mp3Path, _mp3Kbps, _log, out var error))
+            if (Mp3Encoder.TryEncode(wavPath, mp3Path, _mp3Kbps, _log, out var error))
             {
-                var size = new FileInfo(mp3Path).Length;
-                AddHistory(mp3Path, segment.Duration, size, "MP3", note: null);
+                AddHistory(mp3Path, segment.Duration, SafeFileLength(mp3Path), "MP3", note: null);
                 _completedFiles.Add(mp3Path);
-                TryDelete(segment.WavPath);
+                RemoveHistory(wavPath);
+                if (!TryDeleteFile(wavPath))
+                {
+                    // The intermediate WAV survived: keep it discoverable instead of losing it.
+                    AddHistory(wavPath, segment.Duration, SafeFileLength(wavPath), "WAV",
+                        "The MP3 was created but the intermediate WAV could not be removed.");
+                    _log.Warn("The intermediate WAV could not be removed after a successful MP3 conversion: " + wavPath);
+                }
             }
             else
             {
                 firstError ??= error ?? "unknown encoder error";
-                var wavSize = new FileInfo(segment.WavPath).Length;
-                AddHistory(segment.WavPath, segment.Duration, wavSize, "WAV", "MP3 encoding failed; the WAV was kept.");
-                _completedFiles.Add(segment.WavPath);
+                AddHistory(wavPath, segment.Duration, SafeFileLength(wavPath), "WAV", "MP3 encoding failed; the WAV was kept.");
+                _completedFiles.Add(wavPath);
             }
         }
 
         return firstError;
+    }
+
+    private void RemoveHistory(string path)
+    {
+        try { _history.Remove(path); }
+        catch (Exception ex) { _log.Warn("Cannot remove the intermediate history entry: " + ex.Message); }
+    }
+
+    private static long SafeFileLength(string path)
+    {
+        try { return new FileInfo(path).Length; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return 0; }
+    }
+
+    private static bool TryDeleteFile(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return true;
+            File.Delete(path);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private void FinalizeCurrentSegment()
@@ -845,8 +920,15 @@ public sealed class RecordingEngine : IDisposable
 
         if (_outputFormat == OutputFormat.Wav)
         {
-            AddHistory(final, duration, new FileInfo(final).Length, "WAV", note: null);
+            AddHistory(final, duration, SafeFileLength(final), "WAV", note: null);
             _completedFiles.Add(final);
+        }
+        else
+        {
+            // The intermediate WAV is the only surviving recording until the MP3 conversion
+            // commits; index it now so a crash between finalize and encode loses nothing.
+            AddHistory(final, duration, SafeFileLength(final), "WAV",
+                "Intermediate WAV kept until the MP3 conversion completes.");
         }
 
         _log.Info($"Segment finalized: {final} ({duration:0.0} s)");
@@ -1192,7 +1274,9 @@ public sealed class RecordingEngine : IDisposable
         _disposed = true;
         try
         {
-            if (State is not (RecordingState.Idle or RecordingState.Error))
+            // A recovery scan holds no session; stopping it would emit a spurious
+            // "nothing was saved" error at shutdown.
+            if (State is not (RecordingState.Idle or RecordingState.Error or RecordingState.Recovering))
             {
                 StopCore("Application is closing", failure: false);
             }
@@ -1200,6 +1284,27 @@ public sealed class RecordingEngine : IDisposable
         catch (Exception ex)
         {
             _log.Error("Stop during shutdown failed", ex);
+        }
+
+        var deferredDone = _deferredDone;
+        if (_pendingWriterFinalization && deferredDone is not null)
+        {
+            try
+            {
+                if (deferredDone.Wait(_writerJoinTimeout))
+                {
+                    _log.Info("Deferred finalization completed before application exit.");
+                }
+                else
+                {
+                    _deferredCanceled = true;
+                    _log.Error("Application exit while deferred finalization is pending; the .part and recovery journal were preserved for the next launch.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Waiting for deferred finalization during shutdown failed", ex);
+            }
         }
     }
 }

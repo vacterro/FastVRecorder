@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Aucun son n'a été enregistré.",
     "Msg.HotkeyConflict": "Conflit de raccourci : ",
     "Msg.SettingsReadOnly": "Les paramètres ne peuvent pas être enregistrés car le dossier portable est en lecture seule.",
+    "Msg.SettingsReloaded": "settings.json est de nouveau lisible et la copie sur disque a été conservée. Redémarrez FastVRecorder pour voir les paramètres relus.",
     "Msg.AlreadyRunning": "FastVRecorder est déjà en cours d'exécution.",
     "Msg.UnexpectedError": "Erreur inattendue : ",
     "Msg.Copied": "Copié.",

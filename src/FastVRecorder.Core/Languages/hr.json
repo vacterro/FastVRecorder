@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Zvuk nije snimljen.",
     "Msg.HotkeyConflict": "Sukob prečaca: ",
     "Msg.SettingsReadOnly": "Postavke nije moguće spremiti jer je prijenosna mapa samo za čitanje.",
+    "Msg.SettingsReloaded": "settings.json je ponovno čitljiv i kopija na disku je zadržana. Ponovno pokrenite FastVRecorder da biste vidjeli ponovno učitane postavke.",
     "Msg.AlreadyRunning": "FastVRecorder je već pokrenut.",
     "Msg.UnexpectedError": "Neočekivana pogreška: ",
     "Msg.Copied": "Kopirano.",

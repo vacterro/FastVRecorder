@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Аудио не записано.",
     "Msg.HotkeyConflict": "Конфликт комбинаций: ",
     "Msg.SettingsReadOnly": "Настройки не сохраняются: папка доступна только для чтения.",
+    "Msg.SettingsReloaded": "Файл settings.json снова доступен для чтения, а копия на диске сохранена. Перезапустите FastVRecorder, чтобы увидеть перечитанные настройки.",
     "Msg.AlreadyRunning": "FastVRecorder уже запущен.",
     "Msg.UnexpectedError": "Непредвиденная ошибка: ",
     "Msg.Copied": "Скопировано.",

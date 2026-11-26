@@ -205,6 +205,7 @@
     "Msg.NoAudio": "没有录制任何音频。",
     "Msg.HotkeyConflict": "快捷键冲突： ",
     "Msg.SettingsReadOnly": "由于便携式文件夹是只读的，因此无法保存设置。",
+    "Msg.SettingsReloaded": "settings.json 已恢复可读，磁盘上的副本已保留。请重启 FastVRecorder 以查看重新读取的设置。",
     "Msg.AlreadyRunning": "FastVRecorder 已在运行。",
     "Msg.UnexpectedError": "意外错误： ",
     "Msg.Copied": "已复制。",

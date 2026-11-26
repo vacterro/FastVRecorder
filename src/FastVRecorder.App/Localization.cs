@@ -16,7 +16,7 @@ public sealed class Loc : INotifyPropertyChanged
 
     private Loc()
     {
-        LanguagePacks.EnsureLoaded();
+        // Packs are lazy: the first translation pays for English and the active language only.
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Није снимљен никакав звук.",
     "Msg.HotkeyConflict": "Сукоб пречица: ",
     "Msg.SettingsReadOnly": "Подешавања се не могу сачувати јер је преносива фасцикла само за читање.",
+    "Msg.SettingsReloaded": "settings.json је поново читљив и копија на диску је сачувана. Поново покрените FastVRecorder да бисте видели поново учитана подешавања.",
     "Msg.AlreadyRunning": "ФастВРецордер је већ покренут.",
     "Msg.UnexpectedError": "Неочекивана грешка: ",
     "Msg.Copied": "Копирано.",

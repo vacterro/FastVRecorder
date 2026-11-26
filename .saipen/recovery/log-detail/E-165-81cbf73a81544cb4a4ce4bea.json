@@ -1,0 +1,19 @@
+{
+  "event_id": "E-165",
+  "externalization_event": {
+    "operation_id": "checkpoint-2579cde2646649cdbee61307e8a32fd2",
+    "reason": "new LOG event exceeds the live cap; canonical detail externalization"
+  },
+  "lossless": true,
+  "metadata_path": ".saipen/recovery/log-detail/E-165-81cbf73a81544cb4a4ce4bea.json",
+  "operation": "log_event_externalization",
+  "original_event_bytes": 1669,
+  "original_event_path": ".saipen/recovery/log-detail/E-165-81cbf73a81544cb4a4ce4bea.LOG.md",
+  "original_event_sha256": "81cbf73a81544cb4a4ce4bea4882462843cb131aae85c7f455a02778c6b876f8",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "schema_version": 1,
+  "source": ".saipen/LOG.md",
+  "status": "COMMITTED",
+  "ticket_id": "T-12"
+}

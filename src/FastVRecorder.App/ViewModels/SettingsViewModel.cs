@@ -35,6 +35,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _statusText = string.Empty;
     private string _storageWarning = string.Empty;
     private bool _resetArmed;
+    private bool _mp3Available;
 
     private WasapiCaptureSource? _testSource;
     private SampleConverter? _testConverter;
@@ -984,18 +985,38 @@ public sealed class SettingsViewModel : ObservableObject
         RaiseAllChanged();
     }
 
+    /// <summary>
+    /// Rebuilds the format picker. MP3 is offered when the background probe proved Media
+    /// Foundation available, or while it is the saved choice (so the ComboBox binding never
+    /// loses its selected item before the probe finishes).
+    /// </summary>
+    private void RebuildFormatChoices()
+    {
+        FormatChoices.Clear();
+        FormatChoices.Add(new Choice<OutputFormat>(OutputFormat.Wav, "WAV"));
+        if (_mp3Available || _s.Recording.Format == OutputFormat.Mp3)
+        {
+            FormatChoices.Add(new Choice<OutputFormat>(OutputFormat.Mp3, "MP3"));
+        }
+
+        OnPropertyChanged(nameof(Mp3Available));
+    }
+
+    /// <summary>Called once the deferred Media Foundation probe completes (UI thread).</summary>
+    public void UpdateMp3Availability(bool available)
+    {
+        _mp3Available = available;
+        Try(RebuildFormatChoices);
+    }
+
+    public bool Mp3Available => _mp3Available;
+
     public void RebuildChoices()
     {
         Try(() =>
         {
             RefreshDevices();
-
-            FormatChoices.Clear();
-            FormatChoices.Add(new Choice<OutputFormat>(OutputFormat.Wav, "WAV"));
-            if (Mp3Encoder.IsAvailable)
-            {
-                FormatChoices.Add(new Choice<OutputFormat>(OutputFormat.Mp3, "MP3"));
-            }
+            RebuildFormatChoices();
 
             QualityChoices.Clear();
             QualityChoices.Add(new Choice<QualityPreset>(QualityPreset.Voice, _loc["Set.QualityVoice"]));

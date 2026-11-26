@@ -205,6 +205,7 @@
     "Msg.NoAudio": "No se grabó ningún audio.",
     "Msg.HotkeyConflict": "Conflicto de atajos: ",
     "Msg.SettingsReadOnly": "La configuración no se puede guardar porque la carpeta portátil es de solo lectura.",
+    "Msg.SettingsReloaded": "settings.json vuelve a ser legible y se conservó la copia en disco. Reinicie FastVRecorder para ver la configuración releída.",
     "Msg.AlreadyRunning": "FastVRecorder ya se está ejecutando.",
     "Msg.UnexpectedError": "Error inesperado: ",
     "Msg.Copied": "Copiado.",

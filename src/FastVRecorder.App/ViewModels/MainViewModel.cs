@@ -197,23 +197,47 @@ public sealed class MainViewModel : ObservableObject
 
     public void Initialize()
     {
-        Settings.RefreshDevices();
+        if (Settings.Devices.Count == 0)
+        {
+            Settings.RefreshDevices();
+        }
+
         _log.Info($"Microphone list: {Settings.Devices.Count} item(s); selected={Settings.SelectedDeviceId}");
         Recorder.SetLastFile(_history.Latest()?.Path);
         Recorder.RefreshAll();
         UpdateTray(rebuildMenu: true);
         if (Hotkeys.HasError) ShowBanner(_loc["Msg.HotkeyConflict"] + Hotkeys.ErrorText, "warning");
 
-        if (_settings.Recording.Format == OutputFormat.Mp3 && !Mp3Encoder.IsAvailable)
-        {
-            _settings.Recording.Format = OutputFormat.Wav;
-            ShowBanner(_loc["Set.Mp3Unavailable"], "warning");
-        }
-
         if (_settings.Recording.Format == OutputFormat.Flac)
         {
             _settings.Recording.Format = OutputFormat.Wav;
         }
+
+        // Media Foundation probing writes and encodes a probe file. Keep it off the startup
+        // critical path and reconcile the format picker when the background probe finishes.
+        _ = Task.Run(() =>
+            {
+                var probeWatch = System.Diagnostics.Stopwatch.StartNew();
+                var available = Mp3Encoder.IsAvailable;
+                _log.Info($"Media Foundation probe: available={available} in {probeWatch.ElapsedMilliseconds} ms");
+                return available;
+            })
+            .ContinueWith(task =>
+            {
+                if (!task.IsCompletedSuccessfully) return;
+                var available = task.Result;
+                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Settings.UpdateMp3Availability(available);
+                    if (!available && _settings.Recording.Format == OutputFormat.Mp3)
+                    {
+                        _settings.Recording.Format = OutputFormat.Wav;
+                        _saveTimer.Stop();
+                        _saveTimer.Start();
+                        ShowBanner(_loc["Set.Mp3Unavailable"], "warning");
+                    }
+                }));
+            }, TaskScheduler.Default);
     }
 
     public void ShowPage(UiPage page)
@@ -478,6 +502,26 @@ public sealed class MainViewModel : ObservableObject
 
     public void SaveSettingsNow()
     {
+        if (!_store.CanSave && _store.TryReloadAfterAccessRestored(out var reloaded) && reloaded is not null)
+        {
+            // Adopt the re-read document into the live instance so every later save (including
+            // the shutdown saves) persists the newest values instead of the stale in-memory copy.
+            _settings.CopyFrom(reloaded);
+            Settings.RefreshFromSettings();
+            if (_store.Save(_settings))
+            {
+                Settings.StorageWarning = _loc["Msg.SettingsReloaded"];
+                ShowBanner(Settings.StorageWarning, "info");
+            }
+            else
+            {
+                Settings.StorageWarning = _store.LastSaveError ?? _loc["Msg.SettingsReadOnly"];
+                ShowBanner(Settings.StorageWarning, "warning");
+            }
+
+            return;
+        }
+
         if (_store.Save(_settings))
         {
             Settings.StorageWarning = string.Empty;

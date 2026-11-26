@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Er is geen audio opgenomen.",
     "Msg.HotkeyConflict": "Snelkoppelingsconflict: ",
     "Msg.SettingsReadOnly": "Instellingen kunnen niet worden opgeslagen omdat de draagbare map alleen-lezen is.",
+    "Msg.SettingsReloaded": "settings.json is weer leesbaar en de kopie op schijf is bewaard. Start FastVRecorder opnieuw om de opnieuw gelezen instellingen te zien.",
     "Msg.AlreadyRunning": "FastVRecorder is al actief.",
     "Msg.UnexpectedError": "Onverwachte fout: ",
     "Msg.Copied": "Gekopieerd.",

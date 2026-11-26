@@ -1,7 +1,7 @@
 # Roadmap
 
-0.0.3 is functionally complete for the captured handoff. Everything below is deliberately
-deferred, not accidentally missing.
+0.0.4 is functionally complete for the captured handoff and the follow-up reliability audit
+(SAIHANDOFF-3). Everything below is deliberately deferred, not accidentally missing.
 
 ## Candidate next steps
 

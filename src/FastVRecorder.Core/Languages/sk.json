@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Nebol zaznamenaný žiadny zvuk.",
     "Msg.HotkeyConflict": "Konflikt skratiek: ",
     "Msg.SettingsReadOnly": "Nastavenia nie je možné uložiť, pretože prenosný priečinok je len na čítanie.",
+    "Msg.SettingsReloaded": "settings.json je opäť čitateľný a kópia na disku bola zachovaná. Reštartujte FastVRecorder, aby ste videli znova načítané nastavenia.",
     "Msg.AlreadyRunning": "FastVRecorder je už spustený.",
     "Msg.UnexpectedError": "Neočakávaná chyba: ",
     "Msg.Copied": "Skopírované.",

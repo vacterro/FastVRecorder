@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Hangfelvétel nem készült.",
     "Msg.HotkeyConflict": "Gyorsbillentyű ütközés: ",
     "Msg.SettingsReadOnly": "A beállításokat nem lehet menteni, mert a hordozható mappa csak olvasható.",
+    "Msg.SettingsReloaded": "A settings.json újra olvasható, a lemezen lévő másolat megmaradt. Indítsa újra a FastVRecorder alkalmazást az újraolvasott beállítások megtekintéséhez.",
     "Msg.AlreadyRunning": "A FastVRecorder már fut.",
     "Msg.UnexpectedError": "Váratlan hiba: ",
     "Msg.Copied": "Másolva.",

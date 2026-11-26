@@ -205,6 +205,7 @@
     "Msg.NoAudio": "Аўдыё не было запісана.",
     "Msg.HotkeyConflict": "Канфлікт цэтлікаў: ",
     "Msg.SettingsReadOnly": "Немагчыма захаваць налады, бо партатыўная папка даступная толькі для чытання.",
+    "Msg.SettingsReloaded": "Файл settings.json зноў стаў даступным для чытання, а копія на дыску захавана. Перазапусціце FastVRecorder, каб убачыць перачытаныя налады.",
     "Msg.AlreadyRunning": "FastVRecorder ужо запушчаны.",
     "Msg.UnexpectedError": "Нечаканая памылка: ",
     "Msg.Copied": "Скапіравана.",

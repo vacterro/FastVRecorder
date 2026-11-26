@@ -196,6 +196,19 @@ public static class WavHeader
         return TryParse(fs, out info, out error);
     }
 
+    /// <summary>Data chunk start of an existing file, or -1 when the header cannot be read.</summary>
+    public static long DataOffsetOf(string path)
+    {
+        try
+        {
+            return TryParse(path, out var info, out _) && info is not null ? info.DataOffset : -1;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return -1;
+        }
+    }
+
     private static void WriteAscii(Span<byte> dst, string s)
     {
         for (var i = 0; i < s.Length; i++) dst[i] = (byte)s[i];

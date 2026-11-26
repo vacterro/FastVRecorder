@@ -1,4 +1,4 @@
-# FastVRecorder 0.0.3 — User and technical guide
+# FastVRecorder 0.0.4 — User and technical guide
 
 [Back to project overview](../README.md)
 
