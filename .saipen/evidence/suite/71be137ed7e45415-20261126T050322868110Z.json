@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "kind": "saipen-suite-record",
+  "command": [
+    "dotnet",
+    "test",
+    "FastVRecorder.sln",
+    "-c",
+    "Release",
+    "--nologo",
+    "--json"
+  ],
+  "command_sha256": "71be137ed7e45415d5128db078ab0fdbbbd87f44a3f1beb06f6b73817d876baf",
+  "status": "FAIL",
+  "exit_code": 1,
+  "totals": null,
+  "duration_s": 0.3,
+  "timeout_s": 3600,
+  "subject_before": "git:ff937d7c9f5398248d0dda15ff6fd955e2ae96d4eca388be82428edad40b187a",
+  "subject": "git:ff937d7c9f5398248d0dda15ff6fd955e2ae96d4eca388be82428edad40b187a",
+  "stdout_tail": "MSBUILD : error MSB1001: Unknown switch.\n    Full command line: 'C:\\Users\\vac34\\.dotnet\\sdk\\10.0.404\\MSBuild.exe -maxcpucount --verbosity:m -tlp:default=auto --property:VSTestNoLogo=true --property:Configuration=Release --property:NuGetInteractive=false --property:VSTestArtifactsProcessingMode=collect --property:VSTestSessionCorrelationId=32092_700b776f-ddb2-49cb-a8ed-679506a63974 --restoreProperty:VSTestNoLogo=true --restoreProperty:Configuration=Release --restoreProperty:NuGetInteractive=false --restoreProperty:VSTestArtifactsProcessingMode=collect --restoreProperty:VSTestSessionCorrelationId=32092_700b776f-ddb2-49cb-a8ed-679506a63974 --restoreProperty:EnableDefaultCompileItems=false --restoreProperty:EnableDefaultEmbeddedResourceItems=false --restoreProperty:EnableDefaultNoneItems=false --target:VSTest --nologo -nodereuse:false FastVRecorder.sln --json -restore -distributedlogger:Microsoft.DotNet.Cli.Commands.MSBuild.MSBuildLogger,C:\\Users\\vac34\\.dotnet\\sdk\\10.0.404\\dotnet.dll*Microsoft.DotNet.Cli.Commands.MSBuild.MSBuildForwardingLogger,C:\\Users\\vac34\\.dotnet\\sdk\\10.0.404\\dotnet.dll'\n  Switches appended by response files:\nSwitch: --json\n\nFor switch syntax, type \"MSBuild -help\"\n",
+  "stderr_tail": "",
+  "tree_changed_during_run": false,
+  "finished_utc": "2026-11-26T05:03:22Z",
+  "verdict": "FAIL",
+  "problems": [
+    "exit code 1"
+  ]
+}

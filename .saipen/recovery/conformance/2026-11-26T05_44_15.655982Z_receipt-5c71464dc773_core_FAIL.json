@@ -1,0 +1,55 @@
+{
+  "blocking_findings": {
+    "problem_count": 2,
+    "problems": [
+      {
+        "category": null,
+        "credential": false,
+        "detail": ".saipen/IDENTITY.md exists but is not tracked by git -- a release can leave the portable lineage outside the repository and a fresh clone would lose it. `git add .saipen/IDENTITY.md` so the next relea",
+        "detail_hash": "a2d37d67d8fa0a9f",
+        "finding_key": "76b48f23558dce11",
+        "rule_id": "unclassified",
+        "severity": "problem",
+        "subject_id": null,
+        "subject_kind": "global",
+        "subject_ref": null
+      },
+      {
+        "category": null,
+        "credential": false,
+        "detail": "source freshness computation BLOCKED -- git rev-parse --verify HEAD failed with exit 128: fatal: Needed a single revision; no package may become ready or be collected with unknown input",
+        "detail_hash": "432cc11f4846b0ad",
+        "finding_key": "76b48f23558dce11",
+        "rule_id": "unclassified",
+        "severity": "problem",
+        "subject_id": null,
+        "subject_kind": "global",
+        "subject_ref": null
+      }
+    ],
+    "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+    "ruleset_version": 2,
+    "status": "complete",
+    "warning_count": 2
+  },
+  "board_hash": "671f78d02b25b927",
+  "canonical_next_command": null,
+  "content_hash": "fbf10fa713b14cec",
+  "exit_code": 1,
+  "external_actions": [],
+  "gate": "core",
+  "install_fingerprint": "install-v1:ca36a3e1fd30f29afd8ffff23957f6e167748aaa19641d696af9d398562c98a0",
+  "install_home": "C:\\Users\\vac34\\AppData\\Local\\saipen\\scheduled-source",
+  "kind": "conformance_receipt",
+  "log_hash": "51933b373edb8d7b",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "receipt_id": "receipt-5c71464dc773",
+  "remediation_commands": [],
+  "schema_version": 2,
+  "source_head": "",
+  "source_tree_fingerprint": "",
+  "state_hash": "52f67b69c8ed0923",
+  "timestamp_utc": "2026-11-26T05:44:15.655982Z",
+  "validator_protocol_version": "1",
+  "verdict": "FAIL"
+}

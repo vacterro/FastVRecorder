@@ -1,0 +1,332 @@
+<UserControl x:Class="FastVRecorder.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FastVRecorder.App"
+             xmlns:controls="clr-namespace:FastVRecorder.App.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="12,6,12,10">
+
+            <!-- Recording -->
+            <Expander Header="{Binding [Set.Recording], Source={x:Static local:Loc.Instance}}" IsExpanded="True">
+                <StackPanel IsEnabled="{Binding IsRecordingIdle}">
+
+                    <TextBlock Text="{Binding [Set.Microphone], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,2,0,2" />
+                    <ComboBox ItemsSource="{Binding Devices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedDeviceChoice, Mode=TwoWay}" />
+
+                    <TextBlock Text="{Binding [Set.OutputFormat], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                    <ComboBox ItemsSource="{Binding FormatChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedFormatChoice, Mode=TwoWay}" />
+
+                    <TextBlock Text="{Binding [Set.Quality], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                    <ComboBox ItemsSource="{Binding QualityChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedQualityChoice, Mode=TwoWay}" />
+
+                    <StackPanel Visibility="{Binding ShowCustomFormat, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding [Set.SampleRate], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                        <ComboBox ItemsSource="{Binding SampleRateChoices}"
+                                  DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedSampleRateChoice, Mode=TwoWay}" />
+
+                        <TextBlock Text="{Binding [Set.Channels], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                        <ComboBox ItemsSource="{Binding ChannelChoices}"
+                                  DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedChannelsChoice, Mode=TwoWay}" />
+
+                        <TextBlock Text="{Binding [Set.BitDepth], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                        <ComboBox ItemsSource="{Binding EncodingChoices}"
+                                  DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedEncodingChoice, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding ShowMp3Bitrate, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding [Set.Mp3Bitrate], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,6,0,2" />
+                        <ComboBox ItemsSource="{Binding BitrateChoices}"
+                                  DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedMp3BitrateChoice, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="{Binding MicTestButtonText}"
+                                Command="{Binding ToggleMicTestCommand}"
+                                Style="{StaticResource SmallButton}" />
+                        <TextBlock Text="{Binding MicTestText}"
+                                   Style="{StaticResource MutedText}"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"
+                                   MaxWidth="230"
+                                   Margin="8,0,0,0"
+                                   Visibility="{Binding HasMicTestText, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                    <controls:LevelMeter Height="14"
+                                         Margin="0,4,0,0"
+                                         Value="{Binding MicTestLevel}"
+                                         Visibility="{Binding IsMicTesting, Converter={StaticResource BoolToVis}}" />
+
+                    <TextBlock Text="{Binding [Rec.AppliesNext], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource MutedText}" Margin="0,7,0,0" />
+                </StackPanel>
+            </Expander>
+
+            <!-- Files -->
+            <Expander Header="{Binding [Set.Files], Source={x:Static local:Loc.Instance}}" IsExpanded="True">
+                <StackPanel>
+                    <TextBlock Text="{Binding [Set.Folder], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,2,0,2" />
+                    <TextBox Text="{Binding FolderInput, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.AutomationId="FolderInput"
+                             LostFocus="OnFolderLostFocus"
+                             KeyDown="OnFolderKeyDown"
+                             ToolTip="{Binding [Set.FolderHint], Source={x:Static local:Loc.Instance}}" />
+                    <TextBlock Text="{Binding [Set.FolderHint], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource MutedText}"
+                               TextWrapping="Wrap"
+                               Margin="0,3,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button Content="{Binding [Set.Choose], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding ChooseFolderCommand}"
+                                Style="{StaticResource SmallButton}" Margin="0,0,4,0" />
+                        <Button Content="{Binding [Common.Open], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding OpenFolderCommand}"
+                                Style="{StaticResource SmallButton}" Margin="0,0,4,0" />
+                        <Button Content="{Binding [Common.Save], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding ApplyFolderCommand}"
+                                Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding [Set.Naming], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,7,0,2" />
+                    <ComboBox ItemsSource="{Binding NamingChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedNamingChoice, Mode=TwoWay}" />
+
+                    <TextBlock Text="{Binding [Set.Prefix], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,7,0,2" />
+                    <TextBox Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <CheckBox Content="{Binding [Set.Incremental], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding IncrementalNumbering, Mode=TwoWay}" Margin="0,7,0,0" />
+                    <CheckBox Content="{Binding [Set.DateFolders], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding DateFolders, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.OpenAfterSave], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding OpenFolderAfterSave, Mode=TwoWay}" Margin="0,5,0,0" />
+
+                    <TextBlock Text="{Binding [Set.Preview], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource MutedText}" Margin="0,7,0,1" />
+                    <TextBlock Text="{Binding PreviewText}"
+                               Foreground="{DynamicResource Brush.Accent}"
+                               FontSize="10"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Expander>
+
+            <!-- Notifications -->
+            <Expander Header="{Binding [Set.Notifications], Source={x:Static local:Loc.Instance}}">
+                <StackPanel>
+                    <CheckBox Content="{Binding [Set.Sounds], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding SoundsEnabled, Mode=TwoWay}" />
+
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding [Set.Volume], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <Slider Grid.Column="1" Minimum="0" Maximum="100" Margin="8,0,8,0"
+                                Value="{Binding Volume, Mode=TwoWay}"
+                                IsEnabled="{Binding SoundsEnabled}" />
+                        <TextBlock Grid.Column="2" Text="{Binding VolumeText}" Width="34"
+                                   TextAlignment="Right" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.TextSecondary}" FontSize="10" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding [Set.OutputDevice], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,7,0,2" />
+                    <ComboBox ItemsSource="{Binding OutputDevices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedOutputDeviceChoice, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="OutputDeviceCombo" />
+
+                    <Grid Margin="0,4,0,0">
+                        <CheckBox Content="{Binding [Set.StartSound], Source={x:Static local:Loc.Instance}}"
+                                  IsChecked="{Binding PlayStart, Mode=TwoWay}"
+                                  IsEnabled="{Binding SoundsEnabled}" VerticalAlignment="Center" />
+                        <Button Content="{Binding [Set.PreviewSound], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding PreviewStartCommand}"
+                                Style="{StaticResource SmallButton}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Margin="0,4,0,0">
+                        <CheckBox Content="{Binding [Set.DoneSound], Source={x:Static local:Loc.Instance}}"
+                                  IsChecked="{Binding PlayDone, Mode=TwoWay}"
+                                  IsEnabled="{Binding SoundsEnabled}" VerticalAlignment="Center" />
+                        <Button Content="{Binding [Set.PreviewSound], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding PreviewDoneCommand}"
+                                Style="{StaticResource SmallButton}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Margin="0,4,0,0">
+                        <CheckBox Content="{Binding [Set.ErrorSound], Source={x:Static local:Loc.Instance}}"
+                                  IsChecked="{Binding PlayError, Mode=TwoWay}"
+                                  IsEnabled="{Binding SoundsEnabled}" VerticalAlignment="Center" />
+                        <Button Content="{Binding [Set.PreviewSound], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding PreviewErrorCommand}"
+                                Style="{StaticResource SmallButton}" HorizontalAlignment="Right" />
+                    </Grid>
+
+                    <CheckBox Content="{Binding [Set.WindowsNotifications], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding WindowsNotification, Mode=TwoWay}" Margin="0,7,0,0" />
+
+                    <TextBlock Text="{Binding [Set.CueNote], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource MutedText}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+            </Expander>
+
+            <!-- Application -->
+            <Expander Header="{Binding [Set.Application], Source={x:Static local:Loc.Instance}}">
+                <StackPanel>
+                    <CheckBox Content="{Binding [Set.StartWithWindows], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                    <CheckBox Content="{Binding [Set.StartMinimized], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding StartMinimized, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.CloseToTray], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding CloseToTray, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.MinimizeToTray], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding MinimizeToTray, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.AlwaysOnTop], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.RememberPosition], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding RememberWindowPosition, Mode=TwoWay}" Margin="0,5,0,0" />
+                    <CheckBox Content="{Binding [Set.ShowTaskbarIcon], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding ShowTaskbarIcon, Mode=TwoWay}" Margin="0,5,0,0" />
+                </StackPanel>
+            </Expander>
+
+            <!-- Appearance -->
+            <Expander Header="{Binding [Set.Appearance], Source={x:Static local:Loc.Instance}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding [Set.Theme], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,2,0,2" />
+                    <ComboBox ItemsSource="{Binding ThemeChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedThemeChoice, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="ThemeCombo"
+                              AutomationProperties.Name="Theme" />
+
+                    <TextBlock Text="{Binding [Set.Language], Source={x:Static local:Loc.Instance}}"
+                               Style="{StaticResource FieldLabel}" Margin="0,7,0,2" />
+                    <ComboBox ItemsSource="{Binding LanguageChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedLanguageChoice, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="LanguageCombo"
+                              AutomationProperties.Name="UI language" />
+
+                    <Button Content="{Binding [Set.RestoreAppearance], Source={x:Static local:Loc.Instance}}"
+                            Command="{Binding RestoreAppearanceCommand}"
+                            Style="{StaticResource SmallButton}"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0" />
+                </StackPanel>
+            </Expander>
+
+            <!-- Advanced -->
+            <Expander Header="{Binding [Set.Advanced], Source={x:Static local:Loc.Instance}}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding [Set.RecoveryInterval], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <Slider Grid.Column="1" Minimum="0.5" Maximum="5" Margin="8,0,8,0"
+                                Value="{Binding FlushSeconds, Mode=TwoWay}" />
+                        <TextBlock Grid.Column="2" Text="{Binding FlushSecondsText}" Width="34"
+                                   TextAlignment="Right" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.TextSecondary}" FontSize="10" />
+                    </Grid>
+
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding [Set.LowDisk], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Text="{Binding LowDiskMb, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+
+                    <CheckBox Content="{Binding [Set.Diagnostics], Source={x:Static local:Loc.Instance}}"
+                              IsChecked="{Binding DiagnosticsEnabled, Mode=TwoWay}" Margin="0,7,0,0" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="{Binding [Set.OpenLogs], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding OpenLogsCommand}"
+                                Style="{StaticResource SmallButton}" Margin="0,0,4,0" />
+                        <Button Content="{Binding [Set.OpenConfig], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding OpenConfigCommand}"
+                                Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="{Binding [Set.Export], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding ExportCommand}"
+                                Style="{StaticResource SmallButton}" Margin="0,0,4,0" />
+                        <Button Content="{Binding [Set.Import], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding ImportCommand}"
+                                Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal"
+                                    Visibility="{Binding ResetArmed, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding [Set.ResetConfirm], Source={x:Static local:Loc.Instance}}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center" FontSize="10"
+                                       MaxWidth="210" Margin="0,0,6,0" />
+                            <Button Content="{Binding [Common.Yes], Source={x:Static local:Loc.Instance}}"
+                                    Command="{Binding ConfirmResetCommand}"
+                                    Style="{StaticResource DangerButton}" Padding="7,2" FontSize="10"
+                                    Margin="0,0,4,0" />
+                            <Button Content="{Binding [Common.No], Source={x:Static local:Loc.Instance}}"
+                                    Command="{Binding CancelResetCommand}"
+                                    Style="{StaticResource SmallButton}" />
+                        </StackPanel>
+                        <Button Content="{Binding [Set.Reset], Source={x:Static local:Loc.Instance}}"
+                                Command="{Binding ArmResetCommand}"
+                                Style="{StaticResource SmallButton}"
+                                HorizontalAlignment="Left"
+                                Visibility="{Binding ResetArmed, Converter={StaticResource InverseBoolToVis}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <TextBlock Text="{Binding StorageWarning}"
+                       Foreground="{DynamicResource Brush.Recording}"
+                       FontSize="10"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasStorageWarning, Converter={StaticResource BoolToVis}}"
+                       Margin="0,8,0,0" />
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource MutedText}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}"
+                       Margin="0,5,0,0" />
+            <TextBlock Text="{Binding VersionText}"
+                       Style="{StaticResource MutedText}"
+                       Margin="0,6,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

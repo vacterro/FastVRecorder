@@ -1,0 +1,35 @@
+{
+ "closure_sources": {
+  "sealed": []
+ },
+ "config": {
+  "budget_trigger": true,
+  "enabled": true,
+  "evidence_budget_gib": 2.0,
+  "generated_build_budget_gib": 10.0,
+  "initial_scan": true,
+  "interval_done": 20,
+  "raw_failure_grace_days": 7,
+  "raw_success_grace_hours": 24,
+  "retain_current_build": true,
+  "retain_verified_rollback": true,
+  "unknown_policy": "KEEP"
+ },
+ "counted_done": [
+  "T-1",
+  "T-2",
+  "T-4",
+  "T-3"
+ ],
+ "maintenance": {
+  "blockers": [],
+  "fingerprint": null,
+  "last_attempt_fingerprint": null,
+  "protected_bytes": 0,
+  "reason": null,
+  "state": "GC_SETTLED",
+  "updated": null
+ },
+ "runs": [],
+ "schema": 1
+}

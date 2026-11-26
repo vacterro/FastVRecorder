@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-002:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "FastVRecorder: expand UI localization to 33 languages with runtime switching and RTL support"
+    }
+  },
+  "derived_at": "2026-11-26T05:41:20Z",
+  "derived_from": "SRC-002",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "8b92b28fe26ea5be7b730e7878ac1dc1696a43d64983a37ab11255fc1d22d587"
+}

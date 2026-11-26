@@ -1,0 +1,140 @@
+<UserControl x:Class="FastVRecorder.App.Views.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FastVRecorder.App">
+    <Grid Margin="10,8,10,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <DataGrid ItemsSource="{Binding Items}"
+                      SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                      RowHeight="32"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Width="*"
+                                            Header="{Binding [Hist.Name], Source={x:Static local:Loc.Instance}}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding StatusText}"
+                                               FontSize="8.5"
+                                               Foreground="{DynamicResource Brush.Recording}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding StatusText}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Width="80" Binding="{Binding DateText}"
+                                        Header="{Binding [Hist.Date], Source={x:Static local:Loc.Instance}}" />
+                    <DataGridTextColumn Width="56" Binding="{Binding DurationText}"
+                                        Header="{Binding [Hist.Duration], Source={x:Static local:Loc.Instance}}" />
+                    <DataGridTextColumn Width="50" Binding="{Binding SizeText}"
+                                        Header="{Binding [Hist.Size], Source={x:Static local:Loc.Instance}}" />
+                    <DataGridTextColumn Width="46" Binding="{Binding FormatText}"
+                                        Header="{Binding [Hist.Format], Source={x:Static local:Loc.Instance}}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding [Hist.Empty], Source={x:Static local:Loc.Instance}}"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource Brush.TextSecondary}" />
+                <TextBlock Text="{Binding [Hist.EmptyHint], Source={x:Static local:Loc.Instance}}"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="260"
+                           Style="{StaticResource MutedText}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <WrapPanel Grid.Row="1" Margin="0,6,0,0">
+            <Button Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}"
+                    Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.Open], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding OpenCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.Reveal], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding RevealCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.CopyPath], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding CopyPathCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.Rename], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding BeginRenameCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+            <Button Content="{Binding [Hist.Delete], Source={x:Static local:Loc.Instance}}"
+                    Command="{Binding DeleteRequestCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,4" />
+        </WrapPanel>
+
+        <StackPanel Grid.Row="2" Margin="0,2,0,0" Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding [Hist.Rename], Source={x:Static local:Loc.Instance}}"
+                       Style="{StaticResource FieldLabel}" Margin="0,0,0,3" />
+            <TextBox Text="{Binding RenameText, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <Button Content="{Binding [Common.Save], Source={x:Static local:Loc.Instance}}"
+                        Command="{Binding CommitRenameCommand}" Style="{StaticResource SmallButton}" Margin="0,0,4,0" />
+                <Button Content="{Binding [Common.Cancel], Source={x:Static local:Loc.Instance}}"
+                        Command="{Binding CancelRenameCommand}" Style="{StaticResource SmallButton}" />
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="3"
+                Background="{DynamicResource Brush.SurfaceElevated}"
+                BorderBrush="{DynamicResource Brush.Border}"
+                BorderThickness="1"
+                CornerRadius="2"
+                Padding="8,6"
+                Margin="0,4,0,0"
+                Visibility="{Binding IsDeletePending, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock Text="{Binding [Hist.DeleteConfirm], Source={x:Static local:Loc.Instance}}"
+                           TextWrapping="Wrap" FontSize="10.5" />
+                <TextBlock Text="{Binding DeleteName}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" Margin="0,2,0,4" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="{Binding [Common.Delete], Source={x:Static local:Loc.Instance}}"
+                            Command="{Binding ConfirmDeleteCommand}" Style="{StaticResource DangerButton}"
+                            Padding="8,3" FontSize="10" Margin="0,0,4,0" />
+                    <Button Content="{Binding [Common.Cancel], Source={x:Static local:Loc.Instance}}"
+                            Command="{Binding CancelDeleteCommand}" Style="{StaticResource SmallButton}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4">
+            <TextBlock Text="{Binding PlaybackText}"
+                       Style="{StaticResource MutedText}"
+                       Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}"
+                       Margin="0,4,0,0" />
+            <TextBlock Text="{Binding StatusText}"
+                       Style="{StaticResource MutedText}"
+                       Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0" />
+            <TextBlock Text="{Binding ErrorText}"
+                       Foreground="{DynamicResource Brush.Recording}"
+                       FontSize="10"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
+                       Margin="0,4,0,0" />
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kind": "saipen-suite-declaration",
+  "command": [
+    "dotnet",
+    "test",
+    "FastVRecorder.sln",
+    "-c",
+    "Release",
+    "--nologo"
+  ],
+  "command_sha256": "38938d6bee75da85b0874a9cdca43756e5a6d84b526b91067511cc103695b70a",
+  "timeout_s": 3600,
+  "declared_utc": "2026-11-26T05:03:36Z"
+}

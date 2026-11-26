@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>FastVRecorder</AssemblyName>
+    <RootNamespace>FastVRecorder.App</RootNamespace>
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\..\media\favicon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FastVRecorder.Core\FastVRecorder.Core.csproj" />
+    <ProjectReference Include="..\FastVRecorder.Infrastructure\FastVRecorder.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\media\start.wav" Link="media\start.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\media\done.wav" Link="media\done.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\media\error.wav" Link="media\error.wav" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\media\favicon.png" Link="media\favicon.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\media\favicon.ico" Link="media\favicon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\media\tray-*.ico" Link="media\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\themes\*.json" Link="themes\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\FastVRecorder.Core\Languages\*.json" Link="languages\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,30 @@
+{
+  "blocking_findings": {
+    "problem_count": 0,
+    "problems": [],
+    "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+    "ruleset_version": 2,
+    "status": "complete",
+    "warning_count": 1
+  },
+  "board_hash": "27582707c8b17cb3",
+  "canonical_next_command": null,
+  "content_hash": "105fa1f387491f40",
+  "exit_code": 0,
+  "external_actions": [],
+  "gate": "core",
+  "install_fingerprint": "install-v1:87a348d995d56ab438baab5393a457835d505a65a614e95608af4f6037bccdb8",
+  "install_home": "C:\\ProgramData\\SAI\\SAIPEN\\runtime\\02b700d51a4d3d01",
+  "kind": "conformance_receipt",
+  "log_hash": "ea9a71351254f39a",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "receipt_id": "receipt-53fcb2fb9d72",
+  "remediation_commands": [],
+  "schema_version": 2,
+  "source_head": "no-git",
+  "source_tree_fingerprint": "no-git-tree-v1:c16b4f849e875fd575cb2ed24704da5e56a69c2c0c86c9911b67351d1f204c68",
+  "state_hash": "ecd948f831bfd141",
+  "timestamp_utc": "2026-11-26T03:42:02.529644Z",
+  "validator_protocol_version": "1",
+  "verdict": "PASS"
+}

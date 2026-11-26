@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-002:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-2 closed with verification evidence in LOG: verify -> PASS [target: T-2] conf: high -- dotnet test FastVRecorder.sln -c Release 102/102 PASS (suite 6ecc4254); localization packs and RTL reviewed",
+      "text": "FastVRecorder: expand UI localization to 33 languages with runtime switching and RTL support",
+      "verification": "the Work this request created reached its own verification gate; see the T-2 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-2"
+    }
+  },
+  "schema_version": 1
+}

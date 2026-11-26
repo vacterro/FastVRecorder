@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "kind": "saipen-suite-record",
+  "command": [
+    "dotnet",
+    "test",
+    "FastVRecorder.sln",
+    "-c",
+    "Release",
+    "--nologo"
+  ],
+  "command_sha256": "38938d6bee75da85b0874a9cdca43756e5a6d84b526b91067511cc103695b70a",
+  "status": "PASS",
+  "exit_code": 0,
+  "totals": null,
+  "duration_s": 7.1,
+  "timeout_s": 3600,
+  "subject_before": "git:aa3ee9eb6ed7e0df2510eababc7d931ebff4f37aa141c3038536edbea528bc83",
+  "subject": "git:aa3ee9eb6ed7e0df2510eababc7d931ebff4f37aa141c3038536edbea528bc83",
+  "stdout_tail": "  Determining projects to restore...\n  Restored V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Infrastructure\\FastVRecorder.Infrastructure.csproj (in 261 ms).\n  Restored V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Core\\FastVRecorder.Core.csproj (in 261 ms).\n  Restored V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.App\\FastVRecorder.App.csproj (in 261 ms).\n  2 of 5 projects are up-to-date for restore.\n  FastVRecorder.Core -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Core\\bin\\Release\\net10.0\\FastVRecorder.Core.dll\n  FastVRecorder.Core.Tests -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Core.Tests\\bin\\Release\\net10.0\\FastVRecorder.Core.Tests.dll\nTest run for V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Core.Tests\\bin\\Release\\net10.0\\FastVRecorder.Core.Tests.dll (.NETCoreApp,Version=v10.0)\n  FastVRecorder.Infrastructure -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Infrastructure\\bin\\Release\\net10.0-windows\\FastVRecorder.Infrastructure.dll\nA total of 1 test files matched the specified pattern.\n  FastVRecorder.Integration.Tests -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Integration.Tests\\bin\\Release\\net10.0-windows\\FastVRecorder.Integration.Tests.dll\nTest run for V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Integration.Tests\\bin\\Release\\net10.0-windows\\FastVRecorder.Integration.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    78, Skipped:     0, Total:    78, Duration: 239 ms - FastVRecorder.Core.Tests.dll (net10.0)\n\nPassed!  - Failed:     0, Passed:    24, Skipped:     0, Total:    24, Duration: 2 s - FastVRecorder.Integration.Tests.dll (net10.0)\n",
+  "stderr_tail": "",
+  "tree_changed_during_run": false,
+  "finished_utc": "2026-11-26T05:40:43Z",
+  "verdict": "PASS",
+  "problems": []
+}

@@ -1,0 +1,75 @@
+{
+  "board_sha256": "ece9ac8111700dd6",
+  "bound_work": "T-3",
+  "bound_work_phase": "SCOUT",
+  "created_at": "2026-11-26T05:42:14Z",
+  "findings_digest": "bb265ed20403a3728b0ae1a3fddd31dc8d38ac2e6560f0ff7555117014922507",
+  "gate": "core",
+  "journal_op_id": "debt.snapshot-4a09e0101db9",
+  "log_fingerprint": "bc209d60d39faf14",
+  "problem_count": 2,
+  "problems": [
+    {
+      "category": null,
+      "credential": false,
+      "detail": ".saipen/IDENTITY.md exists but is not tracked by git -- a release can leave the portable lineage outside the repository and a fresh clone would lose it. `git add .saipen/IDENTITY.md` so the next relea",
+      "detail_hash": "a2d37d67d8fa0a9f",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "problem",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    },
+    {
+      "category": null,
+      "credential": false,
+      "detail": "source freshness computation BLOCKED -- git rev-parse --verify HEAD failed with exit 128: fatal: Needed a single revision; no package may become ready or be collected with unknown input",
+      "detail_hash": "432cc11f4846b0ad",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "problem",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    }
+  ],
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "reason": "pre-BUILD debt baseline for T-3",
+  "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+  "ruleset_version": 2,
+  "schema_version": 1,
+  "snapshot_id": "DEBT-000004",
+  "source_head": null,
+  "source_tree_fingerprint": null,
+  "state_sha256": "a53f7147b53cccc1",
+  "validator_protocol_version": "1",
+  "warning_count": 2,
+  "warnings": [
+    {
+      "category": "no-conformance-record",
+      "credential": false,
+      "detail": "no LOG line records a conformance run in \u00a7 1.2's fixed form (`RUN: validate.py -> PASS` or `-> FAIL`), so \u00a7 1.10's `saipen status` has nothing to report under Conformance and a cold agent must either ",
+      "detail_hash": "0f511cf104b0873e",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    },
+    {
+      "category": "changelog-unarchived",
+      "credential": false,
+      "detail": "CHANGELOG.md carries <n> while it states it keeps the most recent ~10 -- the overflow belongs in CHANGELOG_ARCHIVE.md, moved verbatim the way LOG segments are sealed, so the top of the file stays the part anyone actually reads",
+      "detail_hash": "434b52b44ae55366",
+      "finding_key": "a0424a3e4cacc44c",
+      "rule_id": "changelog_unarchived",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    }
+  ]
+}
