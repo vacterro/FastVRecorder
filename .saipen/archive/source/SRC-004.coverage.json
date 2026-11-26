@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-004:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-6 closed with verification evidence in LOG: verify -> PASS [target: T-6] conf: high -- dotnet test 102/102 PASS; live Shift+Alt+0: visible->hidden->visible, log registered ShowHideWindow",
+      "text": "fix global Show window hotkey Shift+Alt+0",
+      "verification": "the Work this request created reached its own verification gate; see the T-6 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-6"
+    }
+  },
+  "schema_version": 1
+}

@@ -8,3 +8,5 @@
 {"at": "2026-11-26T05:42:39Z", "event_id": "finish-2d3ce19c082c4a9488517f4d9634af61", "key": "T-3:finish-2d3ce19c082c4a9488517f4d9634af61", "schema": 1, "state": "done", "ticket": "T-3"}
 {"at": "2026-11-26T05:45:38Z", "event_id": "finish-459a55aa402548eda05df38360d4f60b", "key": "T-5:finish-459a55aa402548eda05df38360d4f60b", "schema": 1, "state": "pending", "ticket": "T-5"}
 {"at": "2026-11-26T05:45:38Z", "event_id": "finish-459a55aa402548eda05df38360d4f60b", "key": "T-5:finish-459a55aa402548eda05df38360d4f60b", "schema": 1, "state": "done", "ticket": "T-5"}
+{"at": "2026-11-26T05:50:34Z", "event_id": "finish-736a5f67d07f49a8a6318a543caecbb9", "key": "T-6:finish-736a5f67d07f49a8a6318a543caecbb9", "schema": 1, "state": "pending", "ticket": "T-6"}
+{"at": "2026-11-26T05:50:34Z", "event_id": "finish-736a5f67d07f49a8a6318a543caecbb9", "key": "T-6:finish-736a5f67d07f49a8a6318a543caecbb9", "schema": 1, "state": "done", "ticket": "T-6"}

@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-004:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "fix global Show window hotkey Shift+Alt+0"
+    }
+  },
+  "derived_at": "2026-11-26T05:50:33Z",
+  "derived_from": "SRC-004",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "2074b2848f6b8eea60574a602bbd7d1f82202b1af94f89f63b02842c4263f662"
+}
