@@ -1,0 +1,42 @@
+{
+  "op_id": "source-link-2c688edc6f192a6d",
+  "operation": "source.link",
+  "created_at": "2026-11-26T07:33:33Z",
+  "agent": "saipen",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "semantic_payload_hash": "351e488acf1fcec3",
+  "preconditions": {
+    ".saipen/intake/active/SRC-008.meta.json": "b26fcca5c5da13bd",
+    ".saipen/intake/index.json": "a6cdeb2eea35ff86"
+  },
+  "read_preconditions": {
+    ".saipen/BOARD.md": "4af91dca46db235b",
+    ".saipen/intake/active/SRC-008.md": "44f7be6b88668917"
+  },
+  "verification_policy": "core_fast",
+  "status": "COMMITTED",
+  "progress_index": 2,
+  "targets": [
+    {
+      "path": ".saipen/intake/active/SRC-008.meta.json",
+      "role": "generic",
+      "action": "write",
+      "before_hash": "b26fcca5c5da13bd",
+      "after_hash": "77f0c3224d977067",
+      "applied": true
+    },
+    {
+      "path": ".saipen/intake/index.json",
+      "role": "generic",
+      "action": "write",
+      "before_hash": "a6cdeb2eea35ff86",
+      "after_hash": "1b205e132183084c",
+      "applied": true
+    }
+  ],
+  "receipt_metadata": {
+    "receipt": "SRC-008",
+    "work": "T-10"
+  }
+}

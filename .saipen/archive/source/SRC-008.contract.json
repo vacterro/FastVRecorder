@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-008:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "refresh localized settings screenshots at 0.0.2 after real runtime verification"
+    }
+  },
+  "derived_at": "2026-11-26T07:35:47Z",
+  "derived_from": "SRC-008",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "44f7be6b88668917f7a130c19af668f81aa272bc1248669d76798431bfe16574"
+}

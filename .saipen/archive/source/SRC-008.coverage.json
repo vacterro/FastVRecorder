@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-008:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-10 closed with verification evidence in LOG: verify -> PASS [target: T-10] conf: high -- declared suite PASS (124/124); three captures are 380x460 v0.0.2; German shows UI-Sprache Deutsch, Chinese shows \u7528\u6237\u754c\u9762\u8bed\u8a00 \u7b80\u4f53\u4e2d\u6587, Arabic shows correct LTR title with RTL layout; docs reference media/screenshots and all files resolve. No app change.",
+      "text": "refresh localized settings screenshots at 0.0.2 after real runtime verification",
+      "verification": "the Work this request created reached its own verification gate; see the T-10 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-10"
+    }
+  },
+  "schema_version": 1
+}
