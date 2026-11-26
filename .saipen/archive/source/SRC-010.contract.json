@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-010:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "SAIHANDOFF-4 FastVRecorder final stabilization and release readiness"
+    }
+  },
+  "derived_at": "2026-11-26T13:08:08Z",
+  "derived_from": "SRC-010",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "2f49b50b32e7f14db85a061cf29d9925d17ba1bff4bbe0bb5e9f5682d1589cf2"
+}

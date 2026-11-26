@@ -27,11 +27,11 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
-- [/] T-13 [P2] SAIHANDOFF-4 FastVRecorder final stabilization and release readiness | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-010 | owner: saipen | claim_time: 2026-11-26T13:04:48Z
 
 ## TODO
 
 ## DONE
+- [x] T-13 [P2] SAIHANDOFF-4 FastVRecorder final stabilization and release readiness | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-010 | owner: saipen | claim_time: 2026-11-26T13:04:48Z | closure_mode: own_patch | publication_state: pending
 - [x] T-12 [P2] FastVRecorder SAIHANDOFF-3 MODE 2 final reliability audit: P0 publish manifest path containment, P0/P1 safe package update transaction, P1 deferred finalizat... | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-009 | owner: saipen | claim_time: 2026-11-26T10:26:56Z | closure_mode: own_patch | publication_state: pending
 - [x] T-11 [P1] fix review findings: queue-overflow must be PartialSaved with error cue/note, unreadable settings must not reset/overwrite, MP3 finalization I/O must not strand Finalizing, recovery marker must verify output, manifest must own all shipped assets | verify: Dropped queue bytes yield PartialSaved + history note + error cue; locked settings load is Unreadable/refuses overwrite; MP3 I/O failure completes with PartialSaved; missing recovered output is re-recovered; republish updates omitted manifest assets | owner: saipen | claim_time: 2026-11-26T07:49:16Z | closure_mode: own_patch | publication_state: pending
 - [x] T-10 [P2] refresh localized settings screenshots at 0.0.2 after real runtime verification | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-008 | owner: saipen | claim_time: 2026-11-26T07:35:46Z | closure_mode: own_patch | publication_state: pending

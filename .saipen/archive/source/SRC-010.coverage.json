@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-010:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "E-185",
+      "text": "SAIHANDOFF-4 FastVRecorder final stabilization and release readiness",
+      "verification": "dotnet test FastVRecorder.sln -c Release --nologo: exit 0, 159/159 passed (101 Core + 58 Integration); publish-safety 139/139 on PS7 and 5.1; artifact B66394AB0D8FA7822DC7322CF66537F6B3CCA17254BC89E883A5309BE8D6E768 launched self-contained; live recovery and settings reload verified; hardware NOT VERIFIED (Core Audio 0x80070490)",
+      "work": "T-13"
+    }
+  },
+  "schema_version": 1
+}
