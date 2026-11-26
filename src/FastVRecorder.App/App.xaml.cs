@@ -27,6 +27,8 @@ public partial class App : Application
     public static App Instance => (App)Current;
 
     private Mutex? _mutex;
+    private PortableInstanceLease? _instanceLease;
+    private string? _instanceLeaseError;
     private PortableRoot? _paths;
     private FileLog? _log;
     private SettingsStore? _store;
@@ -51,12 +53,7 @@ public partial class App : Application
         _mutex = new Mutex(initiallyOwned: true, @"Local\FastVRecorder.SingleInstance", out var created);
         if (!created)
         {
-            var russian = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru";
-            MessageBox.Show(
-                russian ? "FastVRecorder уже запущен." : "FastVRecorder is already running.",
-                "FastVRecorder",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            ShowAlreadyRunning();
             Shutdown();
             return;
         }
@@ -67,6 +64,26 @@ public partial class App : Application
 
         try
         {
+            _paths = PortableRoot.FromExecutable();
+            if (_paths.CanWriteConfig(out _))
+            {
+                _instanceLease = PortableInstanceLease.TryAcquire(
+                    _paths.ConfigDir,
+                    out var leaseState,
+                    out var leaseError);
+                if (leaseState == PortableInstanceLeaseState.AlreadyRunning)
+                {
+                    ShowAlreadyRunning();
+                    Shutdown();
+                    return;
+                }
+
+                if (leaseState == PortableInstanceLeaseState.Unavailable)
+                {
+                    _instanceLeaseError = leaseError;
+                }
+            }
+
             Compose(e.Args);
         }
         catch (Exception ex)
@@ -77,11 +94,24 @@ public partial class App : Application
         }
     }
 
+    private void ShowAlreadyRunning()
+    {
+        var russian = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru";
+        MessageBox.Show(
+            russian ? "FastVRecorder уже запущен." : "FastVRecorder is already running.",
+            "FastVRecorder",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
     private void Compose(string[] args)
     {
         var startupWatch = System.Diagnostics.Stopwatch.StartNew();
-        _paths = PortableRoot.FromExecutable();
-        _log = new FileLog(_paths.LogPath);
+        _log = new FileLog(_paths!.LogPath);
+        if (_instanceLease is null && !string.IsNullOrWhiteSpace(_instanceLeaseError))
+        {
+            _log.Warn("Cross-session instance lease is unavailable; two Windows sessions could share this portable folder: " + _instanceLeaseError);
+        }
         _store = new SettingsStore(_paths.SettingsPath);
         _settings = _store.Load();
         _log.Info($"FastVRecorder starting from {_paths.Root} (settings: {_store.LoadStatus})");
@@ -262,6 +292,7 @@ public partial class App : Application
         _tray?.Dispose();
         _devices?.Dispose();
         _log?.Dispose();
+        _instanceLease?.Dispose();
         try { _mutex?.ReleaseMutex(); } catch { /* not owner */ }
         _mutex?.Dispose();
         base.OnExit(e);

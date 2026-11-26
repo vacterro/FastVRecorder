@@ -1,0 +1,45 @@
+{
+  "blocking_findings": {
+    "problem_count": 1,
+    "problems": [
+      {
+        "category": null,
+        "credential": false,
+        "detail": "core sweep [sweep-ticket-link] -- .saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2 PROTOCOL_VIOLATION RUN-1/IMP-001 produced ticket T-14 without recurrence: and weak_model: (META-IMPRO",
+        "detail_hash": "b1a871d46710be32",
+        "finding_key": "76b48f23558dce11",
+        "rule_id": "unclassified",
+        "severity": "problem",
+        "subject_id": null,
+        "subject_kind": "global",
+        "subject_ref": ".saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2"
+      }
+    ],
+    "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+    "ruleset_version": 2,
+    "status": "complete",
+    "warning_count": 2
+  },
+  "board_hash": "c86c55559e6da8d0",
+  "canonical_next_command": "saipen ticket reasoning T-14",
+  "content_hash": "6761ce49a4213af7",
+  "exit_code": 1,
+  "external_actions": [],
+  "gate": "core",
+  "install_fingerprint": "install-v1:9f8a34a2c49184e7df12f25991b099485032dd2becde82a95a039b34e126ae80",
+  "install_home": "C:\\Users\\vac34\\AppData\\Local\\saipen\\scheduled-source",
+  "kind": "conformance_receipt",
+  "log_hash": "ee999c0a99374483",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "receipt_id": "receipt-8d8b33bdd2f8",
+  "remediation_commands": [
+    "saipen ticket reasoning T-14"
+  ],
+  "schema_version": 2,
+  "source_head": "42d2b5fc22ff25b5e694a5da40461981ded19ac6",
+  "source_tree_fingerprint": "git-delta-v1:c66baf69a8306f3b95dfc7badb5f72b088f8de8408e933efadc4d149721a1195",
+  "state_hash": "71e0b4ee37a4af9c",
+  "timestamp_utc": "2026-11-26T13:36:27.158092Z",
+  "validator_protocol_version": "1",
+  "verdict": "FAIL"
+}

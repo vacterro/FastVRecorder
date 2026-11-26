@@ -190,6 +190,11 @@ Paths are absolute in the history index; missing files are detected on refresh a
 **Missing**. Recovery and engine notes drive the Recovered/Incomplete labels. `TryAdd`/`TrySave`
 report persistence; recovery keeps its journal entry and retries indexing when the write fails.
 
+Single instance: a `Local\` mutex stops a second process in the same Windows session, and a
+`FileShare.None` lease on `config/.fastvrecorder-instance.lock` stops a second Windows session
+from sharing the same portable root (the `Local\` namespace alone does not). Both are advisory;
+a stale lease file from a crash is reused, and a pre-existing file with that name is preserved.
+
 ## Hotkeys
 
 `GlobalHotkeyService` owns a message-only `NativeWindow` and registers each global action with

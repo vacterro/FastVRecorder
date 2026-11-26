@@ -1,0 +1,63 @@
+{
+  "board_sha256": "c86c55559e6da8d0",
+  "bound_work": "T-17",
+  "bound_work_phase": "SCOUT",
+  "created_at": "2026-11-26T13:36:27Z",
+  "findings_digest": "b0af00c69c8b83171156986a2d2f3e03ddbf72c520fb2b852c33c118b048be50",
+  "gate": "core",
+  "journal_op_id": "debt.snapshot-51ebef2ab160",
+  "log_fingerprint": "ee999c0a99374483",
+  "problem_count": 1,
+  "problems": [
+    {
+      "category": null,
+      "credential": false,
+      "detail": "core sweep [sweep-ticket-link] -- .saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2 PROTOCOL_VIOLATION RUN-1/IMP-001 produced ticket T-14 without recurrence: and weak_model: (META-IMPRO",
+      "detail_hash": "b1a871d46710be32",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "problem",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": ".saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2"
+    }
+  ],
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "reason": "pre-BUILD debt baseline for T-17",
+  "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+  "ruleset_version": 2,
+  "schema_version": 1,
+  "snapshot_id": "DEBT-000015",
+  "source_head": "42d2b5fc22ff25b5e694a5da40461981ded19ac6",
+  "source_tree_fingerprint": "git-delta-v1:c66baf69a8306f3b95dfc7badb5f72b088f8de8408e933efadc4d149721a1195",
+  "state_sha256": "71e0b4ee37a4af9c",
+  "validator_protocol_version": "1",
+  "warning_count": 2,
+  "warnings": [
+    {
+      "category": "no-conformance-record",
+      "credential": false,
+      "detail": "no LOG line records a conformance run in \u00a7 1.2's fixed form (`RUN: validate.py -> PASS` or `-> FAIL`), so \u00a7 1.10's `saipen status` has nothing to report under Conformance and a cold agent must either ",
+      "detail_hash": "0f511cf104b0873e",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    },
+    {
+      "category": "changelog-unarchived",
+      "credential": false,
+      "detail": "CHANGELOG.md carries <n> while it states it keeps the most recent ~10 -- the overflow belongs in CHANGELOG_ARCHIVE.md, moved verbatim the way LOG segments are sealed, so the top of the file stays the part anyone actually reads",
+      "detail_hash": "434b52b44ae55366",
+      "finding_key": "a0424a3e4cacc44c",
+      "rule_id": "changelog_unarchived",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    }
+  ]
+}
