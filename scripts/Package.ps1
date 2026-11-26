@@ -20,6 +20,13 @@ function Get-PackageRelativePath {
     return $pathFull.Substring($baseFull.Length)
 }
 
+function Get-StreamSha256 {
+    param([Parameter(Mandatory = $true)][IO.Stream]$Stream)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return ([BitConverter]::ToString($sha.ComputeHash($Stream))).Replace('-', '') }
+    finally { $sha.Dispose() }
+}
+
 Push-Location $root
 $temporary = $null
 try {
@@ -133,6 +140,47 @@ try {
     }
     finally {
         Pop-Location
+    }
+
+    # Verify the archive this run produced, entry by entry, against the manifest. The source
+    # check above proves the inputs; only this pass proves the bytes that will ship.
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $expected = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([System.StringComparer]::Ordinal)
+    foreach ($property in $manifest.GetEnumerator()) {
+        $expected[([string]$property.Key).Replace('\', '/')] = [string]$property.Value
+    }
+    $expected['publish-manifest.json'] = Get-FileSha256 $manifestPath
+    $archive = [IO.Compression.ZipFile]::OpenRead($zipTemporary)
+    try {
+        if ($archive.Entries.Count -ne $expected.Count) {
+            throw "Packaged entry count $($archive.Entries.Count) does not match the manifest count $($expected.Count)."
+        }
+        $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+        foreach ($entry in $archive.Entries) {
+            $name = $entry.FullName
+            if ([string]::IsNullOrEmpty($name) -or $name.Contains('\')) {
+                throw "Packaged entry name is invalid: '$name'"
+            }
+            if (-not $expected.ContainsKey($name)) {
+                throw "Packaged entry is not manifest-owned: '$name'"
+            }
+            if (-not $seen.Add($name)) {
+                throw "Packaged entry appears more than once: '$name'"
+            }
+            $stream = $entry.Open()
+            try { $actual = Get-StreamSha256 $stream }
+            finally { $stream.Dispose() }
+            if (-not $actual.Equals($expected[$name], [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Packaged bytes do not match the manifest for '$name' (expected $($expected[$name]), got $actual)."
+            }
+        }
+        if ($seen.Count -ne $expected.Count) {
+            throw "Packaged archive is missing manifest entries ($($seen.Count) of $($expected.Count))."
+        }
+    }
+    finally {
+        $archive.Dispose()
     }
 
     $releaseRoot = if ([IO.Path]::IsPathRooted($ReleaseDir)) {
