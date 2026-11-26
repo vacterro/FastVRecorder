@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-003:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "publish FastVRecorder to https://github.com/vacterro/FastVRecorder and include media/screenshots"
+    }
+  },
+  "derived_at": "2026-11-26T05:45:37Z",
+  "derived_from": "SRC-003",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "3e3e9892ee75bbc46671f766450b06b23b668fcba33769fb05b5ec68fa1daed0"
+}

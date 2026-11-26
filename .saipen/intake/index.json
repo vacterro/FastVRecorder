@@ -1,10 +1,5 @@
 {
-  "active": {
-    "SRC-003": {
-      "linked_work": "T-5",
-      "source_sha256": "3e3e9892ee75bbc46671f766450b06b23b668fcba33769fb05b5ec68fa1daed0"
-    }
-  },
+  "active": {},
   "next_id": 4,
   "schema_version": 1,
   "tombstones": {
@@ -37,6 +32,22 @@
       "requirements": 1,
       "schema_version": 1,
       "source_sha256": "8b92b28fe26ea5be7b730e7878ac1dc1696a43d64983a37ab11255fc1d22d587",
+      "status": "CLOSED",
+      "unresolved": 0
+    },
+    "SRC-003": {
+      "actionable": 1,
+      "archive_ref": ".saipen/archive/source/SRC-003.md",
+      "closed_at": "2026-11-26T05:45:38Z",
+      "closure_event": null,
+      "linked_work": "T-5",
+      "linked_works": [
+        "T-5"
+      ],
+      "receipt_id": "SRC-003",
+      "requirements": 1,
+      "schema_version": 1,
+      "source_sha256": "3e3e9892ee75bbc46671f766450b06b23b668fcba33769fb05b5ec68fa1daed0",
       "status": "CLOSED",
       "unresolved": 0
     }

@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-003:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-5 closed with verification evidence in LOG: verify -> PASS [target: T-5] conf: high -- dotnet test 102/102 PASS; release tree has VERSION 0.0.1, README screenshots, 33 language packs",
+      "text": "publish FastVRecorder to https://github.com/vacterro/FastVRecorder and include media/screenshots",
+      "verification": "the Work this request created reached its own verification gate; see the T-5 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-5"
+    }
+  },
+  "schema_version": 1
+}

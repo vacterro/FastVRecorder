@@ -27,11 +27,11 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
-- [/] T-5 [P2] publish FastVRecorder to https://github.com/vacterro/FastVRecorder and include media/screenshots | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-003 | owner: saipen | claim_time: 2026-11-26T05:44:40Z
 
 ## TODO
 
 ## DONE
+- [x] T-5 [P2] publish FastVRecorder to https://github.com/vacterro/FastVRecorder and include media/screenshots | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-003 | owner: saipen | claim_time: 2026-11-26T05:45:37Z | closure_mode: own_patch | publication_state: pending
 - [x] T-3 [P2] Settings: allow typing a recording folder path manually | verify: Settings -> Files: type an absolute path, blur/Enter applies it, the path is saved and used for the next recording | owner: saipen | claim_time: 2026-11-26T05:42:38Z | closure_mode: own_patch | publication_state: pending
 - [x] T-4 [P0] Audio: fix silent recordings (bounded queue) and notification output selection | verify: Live microphone recording contains non-zero signal; notification cue can be routed to a selected output endpoint and previews without error | owner: saipen | claim_time: 2026-11-26T05:42:04Z | closure_mode: own_patch | publication_state: pending
 - [x] T-2 [P2] FastVRecorder: expand UI localization to 33 languages with runtime switching and RTL support | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-002 | owner: saipen | claim_time: 2026-11-26T05:41:20Z | closure_mode: own_patch | publication_state: pending
