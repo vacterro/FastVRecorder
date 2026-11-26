@@ -1,0 +1,38 @@
+{
+  "op_id": "improve-hold-482bb53a69964f1980039b0fb24b8fce",
+  "operation": "improve_hold",
+  "created_at": "2026-11-26T13:59:40Z",
+  "agent": "saipen",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "semantic_payload_hash": "d00b4191020d218e",
+  "preconditions": {
+    ".saipen/STATE.md": "5d7b278673ab1dc6",
+    ".saipen/LOG.md": "767c63801447c9e0"
+  },
+  "read_preconditions": {
+    ".saipen/BOARD.md": "ec661eb64c13bca7",
+    ".saipen/logs": "tree-missing-v1"
+  },
+  "verification_policy": "core_fast",
+  "status": "COMMITTED",
+  "progress_index": 2,
+  "targets": [
+    {
+      "path": ".saipen/LOG.md",
+      "role": "log",
+      "action": "write",
+      "before_hash": "767c63801447c9e0",
+      "after_hash": "e3bbb5360121c4e4",
+      "applied": true
+    },
+    {
+      "path": ".saipen/STATE.md",
+      "role": "state",
+      "action": "write",
+      "before_hash": "5d7b278673ab1dc6",
+      "after_hash": "fd0f10ac1135b06f",
+      "applied": true
+    }
+  ]
+}
