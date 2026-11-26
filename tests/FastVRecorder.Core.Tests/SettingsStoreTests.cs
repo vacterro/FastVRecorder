@@ -49,6 +49,38 @@ public sealed class SettingsStoreTests : TempDirectoryTest
     }
 
     [Fact]
+    public void SaveAndLoad_RoundTripsAssignedHotkeysAndFolder()
+    {
+        var store = new SettingsStore(SettingsPath);
+        var settings = new AppSettings();
+        var showHide = settings.Hotkeys.Single(h => h.Action == HotkeyAction.ShowHideWindow);
+        showHide.Gesture = "Shift+Alt+0";
+        showHide.Scope = HotkeyScope.Global;
+        var openFolder = settings.Hotkeys.Single(h => h.Action == HotkeyAction.OpenRecordingFolder);
+        openFolder.Gesture = "Ctrl+Alt+O";
+        openFolder.Scope = HotkeyScope.Local;
+        settings.Files.RecordingFolder = Path.Combine("Recordings", "Voice Notes");
+
+        Assert.True(store.Save(settings));
+        var reopened = new SettingsStore(SettingsPath);
+        var loaded = reopened.Load();
+
+        Assert.Equal(SettingsLoadStatus.Loaded, reopened.LoadStatus);
+        Assert.True(HotkeyGesture.TryParse("Shift+Alt+0", out var expectedShowHide));
+        Assert.True(HotkeyGesture.TryParse(
+            loaded.Hotkeys.Single(h => h.Action == HotkeyAction.ShowHideWindow).Gesture,
+            out var loadedShowHide));
+        Assert.Equal(expectedShowHide, loadedShowHide);
+        Assert.True(HotkeyGesture.TryParse("Ctrl+Alt+O", out var expectedOpenFolder));
+        Assert.True(HotkeyGesture.TryParse(
+            loaded.Hotkeys.Single(h => h.Action == HotkeyAction.OpenRecordingFolder).Gesture,
+            out var loadedOpenFolder));
+        Assert.Equal(expectedOpenFolder, loadedOpenFolder);
+        Assert.Equal(HotkeyScope.Local, loaded.Hotkeys.Single(h => h.Action == HotkeyAction.OpenRecordingFolder).Scope);
+        Assert.Equal(Path.Combine("Recordings", "Voice Notes"), loaded.Files.RecordingFolder);
+    }
+
+    [Fact]
     public void MissingFile_ReturnsDefaults()
     {
         var store = new SettingsStore(SettingsPath);
