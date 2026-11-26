@@ -27,12 +27,11 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
-- [/] T-15 [P2] recovery lease must never delete a pre-existing user file named .fastvrecorder-recovery.lock | verify: create Recordings/.fastvrecorder-recovery.lock with user bytes, run the recovery scan, and verify the file and bytes survive while a stale owned lease is still handled safely | owner: saipen | claim_time: 2026-11-26T13:50:36Z
 
 ## TODO
-- [ ] T-14 [P2] saipen ship release parity gate demands absent README mirrors and a README version marker; make the gate project-scoped or complete for this repository without fabricated translations | verify: saipen ship on a clean checkout without README.ee/ded/ja either completes the release or refuses with a project-scoped waiver; no dummy mirrors are created
 
 ## DONE
+- [x] T-15 [P2] recovery lease must never delete a pre-existing user file named .fastvrecorder-recovery.lock | verify: create Recordings/.fastvrecorder-recovery.lock with user bytes, run the recovery scan, and verify the file and bytes survive while a stale owned lease is still handled safely | owner: saipen | claim_time: 2026-11-26T13:50:41Z | closure_mode: own_patch | publication_state: pending
 - [x] T-16 [P2] Package.ps1 must verify the produced ZIP entries and hashes against publish-manifest.json | verify: corrupt or omit one staged file and verify Package.ps1 fails after re-opening the archive; a good package passes entry-by-entry name/size/SHA-256 comparison | owner: saipen | claim_time: 2026-11-26T13:47:53Z | closure_mode: own_patch | publication_state: pending
 - [x] T-17 [P3] protect History index from cross-session lost updates (Local single-instance mutex allows two sessions; HistoryStore is process-local) | verify: two stores/processes add different entries and a reload contains both, or the second save is refused with a surfaced conflict; reproduce the current one-entry loss first | owner: saipen | claim_time: 2026-11-26T13:42:42Z | closure_mode: own_patch | publication_state: pending
 - [x] T-18 [P3] correct final-artifact performance evidence in ACCEPTANCE/CHANGELOG and note host-load variance | verify: the 0.0.5 final artifact is measured cold and warm on the same host and the docs state the observed range and staging differences | owner: saipen | claim_time: 2026-11-26T13:35:12Z | closure_mode: own_patch | publication_state: pending
@@ -51,3 +50,4 @@
 - [x] T-1 [P2] # SAIHANDOFF — FastVRecorder | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-001 | owner: saipen | claim_time: 2026-11-26T05:07:06Z | closure_mode: own_patch | publication_state: pending
 
 ## BLOCKED
+- [ ] T-14 [P2] saipen ship release parity gate demands absent README mirrors and a README version marker; make the gate project-scoped or complete for this repository without fabricated translations | verify: saipen ship on a clean checkout without README.ee/ded/ja either completes the release or refuses with a project-scoped waiver; no dummy mirrors are created | owner: saipen | claim_time: 2026-11-26T13:53:12Z | blocker: External SAIPEN release gate: saipen/tools/saipen_engine/release.py version_metadata_paths unconditionally requires README.ee.md, README.ded.md, README.ja.md and a **v<version>** badge in README.md for every project. FastVRecorder has no localized README surface and the operator authorized no fabricated translations; the fix belongs to the SAIPEN release tooling (project-scoped opt-out or generated surface), not to this repository. Closing T-13 used the supported ticket-done path after main/tag were pushed. | blocker_scope: ticket
