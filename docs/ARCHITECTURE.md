@@ -108,8 +108,10 @@ segment limit; the engine finalizes the segment, registers it, reserves the next
 continues in a new file. This keeps the 32-bit RIFF size valid without relying on RF64 support.
 
 MP3 is not streamed: the recoverable intermediate is a WAV. After a successful stop the WAV is
-encoded through Windows Media Foundation (`MediaFoundationEncoder.EncodeToMp3`) and only deleted
-when the MP3 exists and is non-trivial. A failed encode keeps the WAV and records a History note.
+encoded through Windows Media Foundation (`MediaFoundationEncoder.EncodeToMp3`) into an owned
+temporary `.mp3`, decoded back to check its duration against the source, and published without
+overwriting. Only then is the WAV deleted; a failed encode keeps the WAV and records a History
+note.
 
 ## Crash recovery
 
@@ -126,10 +128,12 @@ At the next start the engine enters `Recovering` and `RecoveryService` scans:
    config/themes/media trees).
 
 For each part it parses the WAV header, computes the physically present whole frames, copies them
-into a new `<name>_RECOVERED.wav`, verifies the new header and reads frames back with
-`WaveFileReader`, then writes a `.recovered` marker, updates the recovery JSON, adds a History
-entry marked **Recovered**, removes the journal entry, and deletes only an empty reserved
-placeholder. The `.part` itself is preserved.
+through an owned `*.tmp-*` file into a new `<name>_RECOVERED.wav`, verifies the new header and
+reads frames back with `WaveFileReader`, then writes a `.recovered` marker, updates the recovery
+JSON, adds a History entry marked **Recovered** and removes the journal entry. The `.part` and
+every metadata-referenced file are preserved. A crash between publishing the recovered file and
+committing History/marker is repaired by adopting the already verified `_RECOVERED.wav`; a
+transient I/O failure keeps the journal entry for a later retry.
 
 If a part has no metadata, the header inside the part is enough. If the header is unusable or has
 no complete frames, the part is left alone and a `.unrecoverable.json` sidecar is written; later
@@ -165,9 +169,9 @@ Counters advance before the file is created, so a failed attempt never reuses a 
 volume/interval/threshold, rejects unknown formats/themes/languages, removes duplicate or reserved
 hotkeys, and fills every missing hotkey action with its default.
 
-`HistoryStore` is a small JSON list (max 5000, pinned entries kept) with atomic writes. Paths are
-absolute in 0.0.1; missing files are detected on refresh and shown as **Missing**. Recovery and
-engine notes drive the Recovered/Incomplete labels.
+`HistoryStore` is a small JSON list (max 5000, pinned entries kept) with serialized atomic writes.
+Paths are absolute in the history index; missing files are detected on refresh and shown as
+**Missing**. Recovery and engine notes drive the Recovered/Incomplete labels.
 
 ## Hotkeys
 
@@ -199,7 +203,8 @@ local hotkey dispatch, and hotkey capture routing.
 
 `LanguagePacks` embeds 33 JSON packs in `Core` and exposes `Translate(code, key)` with English as
 the fallback for every missing key. Optional `languages/<code>.json` files beside the executable
-replace an embedded pack, so translations can be corrected without rebuilding. `Loc` resolves the
+merge over the embedded pack, so translations can be corrected without rebuilding and a partial
+override never loses newly added keys. `Loc` resolves the
 stored setting (or the OS culture) through `LanguageCatalog`, exposes the string table through an
 indexer, and raises `Item[]`, `FlowDirection` and language properties on a switch. Arabic selects
 right-to-left window flow; every view model is reused and no restart is required. The 31 added
@@ -222,6 +227,6 @@ journal.
 Integration tests run the real `RecordingEngine` against a fake capture source that emits fixed
 frames: start/stop, concurrent start/stop, pause/resume, missing device, unavailable folder, MP3
 (when Media Foundation is present), and `RecoveryService` against hand-built partial files
-(with/without metadata, idempotency, damaged parts, journal discovery). The environment used for
-this build had no physical capture endpoint, so the WASAPI adapter boundary is covered by the
-interface and the deterministic source; hardware capture remains an operator check.
+(with/without metadata, idempotency, damaged parts, journal discovery). The operator machine also
+exercised the real WASAPI boundary with an `ATR2100x-USB` endpoint, including live recordings and
+a forced process kill followed by a verified `_RECOVERED.wav` rebuild.

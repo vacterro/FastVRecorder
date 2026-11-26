@@ -1,6 +1,6 @@
 # Roadmap
 
-0.0.1 is functionally complete for the captured handoff. Everything below is deliberately
+0.0.2 is functionally complete for the captured handoff. Everything below is deliberately
 deferred, not accidentally missing.
 
 ## Candidate next steps
@@ -18,7 +18,7 @@ deferred, not accidentally missing.
    collapsed notification details.
 7. **Compact mode** — a denser layout for small screens; the current 380 × 460 layout is already
    compact.
-8. **Additional languages** — the string table is isolated in `Localization.cs`.
+8. **Additional languages** — the embedded JSON packs and `languages/` overrides are isolated in `LanguagePacks`; no engine changes are needed.
 9. **Installer** — optional MSIX/Inno Setup wrapper; the portable folder remains the primary
    distribution.
 10. **Manual hardware matrix** — capture testing on USB/Bluetooth microphones, network shares,
