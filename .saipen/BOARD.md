@@ -27,8 +27,13 @@
      write that field name next to a concrete id anywhere in this file. -->
 
 ## DOING
+- [/] T-18 [P3] correct final-artifact performance evidence in ACCEPTANCE/CHANGELOG and note host-load variance | verify: the 0.0.5 final artifact is measured cold and warm on the same host and the docs state the observed range and staging differences | owner: saipen | claim_time: 2026-11-26T13:35:12Z
 
 ## TODO
+- [ ] T-17 [P3] protect History index from cross-session lost updates (Local single-instance mutex allows two sessions; HistoryStore is process-local) | verify: two stores/processes add different entries and a reload contains both, or the second save is refused with a surfaced conflict; reproduce the current one-entry loss first
+- [ ] T-16 [P2] Package.ps1 must verify the produced ZIP entries and hashes against publish-manifest.json | verify: corrupt or omit one staged file and verify Package.ps1 fails after re-opening the archive; a good package passes entry-by-entry name/size/SHA-256 comparison
+- [ ] T-15 [P2] recovery lease must never delete a pre-existing user file named .fastvrecorder-recovery.lock | verify: create Recordings/.fastvrecorder-recovery.lock with user bytes, run the recovery scan, and verify the file and bytes survive while a stale owned lease is still handled safely
+- [ ] T-14 [P2] saipen ship release parity gate demands absent README mirrors and a README version marker; make the gate project-scoped or complete for this repository without fabricated translations | verify: saipen ship on a clean checkout without README.ee/ded/ja either completes the release or refuses with a project-scoped waiver; no dummy mirrors are created
 
 ## DONE
 - [x] T-13 [P2] SAIHANDOFF-4 FastVRecorder final stabilization and release readiness | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-010 | owner: saipen | claim_time: 2026-11-26T13:04:48Z | closure_mode: own_patch | publication_state: pending

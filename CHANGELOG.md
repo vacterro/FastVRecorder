@@ -68,8 +68,10 @@ settings reconciliation and reproducible packaging.
 - Publish-safety suite unchanged at 139 assertions; verified on PowerShell 7 and 5.1.
 
 ### Performance and environment
-- Warm startup 1.33–1.99 s to a visible window; working set ≈ 160 MB, private bytes ≈ 105 MB,
-  managed heap ≈ 13 MB, 23–25 threads, ≈ 860–880 handles, idle CPU 0.031 s per 30 s.
+- Startup on this host: the isolated staging copy reached a visible window in 1.33–1.99 s warm;
+  the final packaged artifact measured 5.2 s cold and 4.4–6.6 s warm while another application
+  was loading the host. Working set ≈ 160 MB, private bytes ≈ 105 MB, managed heap ≈ 13 MB,
+  23–25 threads, ≈ 860–880 handles, idle CPU 0.031 s per 30 s.
 - Real microphone acceptance remains NOT VERIFIED on this host: no default capture endpoint
   (`Core Audio error 0x80070490`); the only enumeration entry is the system-default placeholder.
   MP3/Media Foundation encoding is available (`available=True`).

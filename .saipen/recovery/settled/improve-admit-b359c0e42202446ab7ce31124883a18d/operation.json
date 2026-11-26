@@ -1,0 +1,35 @@
+{
+  "op_id": "improve-admit-b359c0e42202446ab7ce31124883a18d",
+  "operation": "improve_admit",
+  "created_at": "2026-11-26T13:13:54Z",
+  "agent": "saipen-01",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "semantic_payload_hash": "11beb498aea43f2f",
+  "preconditions": {
+    ".saipen/improve/imp-vacterro-fastvrecorder-20261126-6/MANIFEST.md": "",
+    ".saipen/improve/imp-vacterro-fastvrecorder-20261126-6/saipen-01/saipen_improve_SAIPEN.md": ""
+  },
+  "read_preconditions": {},
+  "verification_policy": "improve_atomic_file",
+  "status": "COMMITTED",
+  "progress_index": 2,
+  "targets": [
+    {
+      "path": ".saipen/improve/imp-vacterro-fastvrecorder-20261126-6/MANIFEST.md",
+      "role": "manifest",
+      "action": "write",
+      "before_hash": "",
+      "after_hash": "aa6f7c4ab1475966",
+      "applied": true
+    },
+    {
+      "path": ".saipen/improve/imp-vacterro-fastvrecorder-20261126-6/saipen-01/saipen_improve_SAIPEN.md",
+      "role": "report",
+      "action": "write",
+      "before_hash": "",
+      "after_hash": "4419d7a925dc01dc",
+      "applied": true
+    }
+  ]
+}
