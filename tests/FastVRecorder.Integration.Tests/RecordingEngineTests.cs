@@ -112,6 +112,31 @@ public sealed class RecordingEngineTests : TempDirectoryTest
     }
 
     [Fact]
+    public async Task QueueOverflow_IsPartialSavedWithHistoryNote()
+    {
+        var harness = CreateHarness();
+        harness.Engine.QueueCapacityBytesOverride = 4096;
+        var slept = 0;
+        harness.Engine.WriterLoopHook = () =>
+        {
+            if (Interlocked.Exchange(ref slept, 1) == 0) Thread.Sleep(300);
+        };
+        var completed = new TaskCompletionSource<RecordingCompletedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Engine.Completed += (_, e) => completed.TrySetResult(e);
+
+        using var engine = harness.Engine;
+        Assert.True(await engine.StartAsync());
+        await Task.Delay(700);
+        await engine.StopAsync();
+
+        var eventArgs = await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(RecordingOutcome.PartialSaved, eventArgs.Outcome);
+        Assert.Contains("dropped", eventArgs.Note ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(harness.History.Snapshot(), entry =>
+            entry.Note is not null && entry.Note.Contains("dropped", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task ConcurrentStarts_ProduceOnlyOneRecording()
     {
         var harness = CreateHarness();

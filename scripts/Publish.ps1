@@ -40,9 +40,20 @@ try {
         -o $staging
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
-    foreach ($document in @('README.md', 'CHANGELOG.md', 'VERSION')) {
+    foreach ($document in @('README.md', 'CHANGELOG.md', 'VERSION', 'THIRD-PARTY-NOTICES.md')) {
         $source = Join-Path $root $document
         if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $staging -Force }
+    }
+
+    # Runtime redistribution notices must come from the SDK that produced this package, never
+    # from a manual release step.
+    $dotnetRoot = Split-Path -Parent (Get-Command dotnet -ErrorAction Stop).Source
+    foreach ($notice in @('LICENSE.txt', 'ThirdPartyNotices.txt')) {
+        $noticeSource = Join-Path $dotnetRoot $notice
+        if (-not (Test-Path -LiteralPath $noticeSource -PathType Leaf)) {
+            throw "Runtime notice is missing next to the .NET host: $noticeSource"
+        }
+        Copy-Item -LiteralPath $noticeSource -Destination (Join-Path $staging $notice) -Force
     }
     $docs = Join-Path $root 'docs'
     if (Test-Path -LiteralPath $docs) {
@@ -70,7 +81,7 @@ try {
         }
     }
 
-    foreach ($required in @('FastVRecorder.exe', 'FastVRecorder.Core.dll', 'media\start.wav', 'media\screenshots\recorder.png', 'languages\en.json', 'themes\goldendefault.json', 'docs\USER_GUIDE.md')) {
+    foreach ($required in @('FastVRecorder.exe', 'FastVRecorder.Core.dll', 'media\start.wav', 'media\screenshots\recorder.png', 'languages\en.json', 'themes\goldendefault.json', 'docs\USER_GUIDE.md', 'THIRD-PARTY-NOTICES.md', 'LICENSE.txt', 'ThirdPartyNotices.txt')) {
         if (-not (Test-Path -LiteralPath (Join-Path $staging $required))) {
             throw "Staging validation failed: missing $required."
         }

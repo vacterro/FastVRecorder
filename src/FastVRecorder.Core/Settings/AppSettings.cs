@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -243,6 +244,9 @@ public enum SettingsLoadStatus
     RecoveredFromBackup,
     PartiallyRecovered,
     ResetAfterCorruption,
+
+    /// <summary>The file exists but could not be read; saving is refused to avoid overwriting it.</summary>
+    Unreadable,
 }
 
 /// <summary>Loads/saves settings.json atomically with a .bak of the previous valid file.</summary>
@@ -267,6 +271,9 @@ public sealed class SettingsStore
     public string? LastSaveError { get; private set; }
     public SettingsLoadStatus LoadStatus { get; private set; }
     public string? LoadDetail { get; private set; }
+
+    /// <summary>False when Load could not read an existing document; Save must not overwrite it.</summary>
+    public bool CanSave { get; private set; } = true;
 
     public static string Serialize(AppSettings s) => JsonSerializer.Serialize(s, Options);
 
@@ -332,10 +339,16 @@ public sealed class SettingsStore
     {
         lock (_lock)
         {
-            var primary = AtomicFile.TryReadAllText(FilePath);
-            if (primary is null && !File.Exists(FilePath) && !File.Exists(FilePath + ".bak"))
+            var backupPath = FilePath + ".bak";
+            var primaryExists = File.Exists(FilePath);
+            var backupExists = File.Exists(backupPath);
+            var primary = ReadWithRetry(FilePath);
+            var backup = ReadWithRetry(backupPath);
+
+            if (primary is null && !primaryExists && !backupExists)
             {
                 LoadStatus = SettingsLoadStatus.CreatedDefaults;
+                CanSave = true;
                 var d = new AppSettings();
                 d.Normalize();
                 return d;
@@ -348,6 +361,7 @@ public sealed class SettingsStore
                     Migrate(s);
                     s.Normalize();
                     LoadStatus = SettingsLoadStatus.Loaded;
+                    CanSave = true;
                     return s;
                 }
                 var lenient = DeserializeLenient(primary, out var partial);
@@ -356,12 +370,12 @@ public sealed class SettingsStore
                     Migrate(lenient);
                     lenient.Normalize();
                     LoadStatus = SettingsLoadStatus.PartiallyRecovered;
+                    CanSave = true;
                     LoadDetail = "Some settings sections were malformed and were reset to defaults.";
                     PreserveCorrupt();
                     return lenient;
                 }
             }
-            var backup = AtomicFile.TryReadAllText(FilePath + ".bak");
             if (backup is not null)
             {
                 var b = Deserialize(backup) ?? DeserializeLenient(backup, out _);
@@ -370,18 +384,51 @@ public sealed class SettingsStore
                     Migrate(b);
                     b.Normalize();
                     LoadStatus = SettingsLoadStatus.RecoveredFromBackup;
+                    CanSave = true;
                     LoadDetail = "settings.json was unreadable; restored the previous valid settings from settings.json.bak.";
                     PreserveCorrupt();
                     return b;
                 }
             }
+
+            // An existing document that could not be read is not corruption: another process may
+            // hold it briefly. Never replace it with defaults; refuse writes until a restart.
+            if ((primaryExists && primary is null) || (backupExists && backup is null))
+            {
+                CanSave = false;
+                LoadStatus = SettingsLoadStatus.Unreadable;
+                LoadDetail = "settings.json exists but could not be read (it may be locked by another program). Defaults are in use and changes will not be saved until FastVRecorder is restarted.";
+                var safe = new AppSettings();
+                safe.Normalize();
+                return safe;
+            }
+
             PreserveCorrupt();
             LoadStatus = SettingsLoadStatus.ResetAfterCorruption;
+            CanSave = true;
             LoadDetail = "settings.json and its backup were unreadable; defaults are in use. The damaged file was kept as settings.json.corrupt.";
             var def = new AppSettings();
             def.Normalize();
             return def;
         }
+    }
+
+    private static string? ReadWithRetry(string path)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                return File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt == 2) return null;
+                Thread.Sleep(50);
+            }
+        }
+
+        return null;
     }
 
     private void PreserveCorrupt()
@@ -413,6 +460,12 @@ public sealed class SettingsStore
     {
         lock (_lock)
         {
+            if (!CanSave)
+            {
+                LastSaveError = $"Settings were not read from {FilePath}; refusing to overwrite the existing file. Restart FastVRecorder after resolving the access problem.";
+                return false;
+            }
+
             try
             {
                 AtomicFile.WriteAllText(FilePath, Serialize(settings));

@@ -81,6 +81,28 @@ public sealed class SettingsStoreTests : TempDirectoryTest
     }
 
     [Fact]
+    public void LockedExistingSettings_AreNotResetOrOverwritten()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        var original = """{"schemaVersion":2,"files":{"prefix":"Kept"}}""";
+        File.WriteAllText(SettingsPath, original);
+
+        using var locked = new FileStream(SettingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        var store = new SettingsStore(SettingsPath);
+        var loaded = store.Load();
+
+        Assert.Equal(SettingsLoadStatus.Unreadable, store.LoadStatus);
+        Assert.False(store.CanSave);
+        Assert.Equal(AppSettings.CurrentSchemaVersion, loaded.SchemaVersion);
+        var replacement = new AppSettings();
+        replacement.Files.Prefix = "Overwrite";
+        Assert.False(store.Save(replacement));
+
+        locked.Dispose();
+        Assert.Equal(original, File.ReadAllText(SettingsPath));
+    }
+
+    [Fact]
     public void MissingFile_ReturnsDefaults()
     {
         var store = new SettingsStore(SettingsPath);

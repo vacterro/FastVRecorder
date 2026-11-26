@@ -27,7 +27,7 @@ section 16. All requirements in the captured body are covered below.
 | Repository root, tree, Git, media, Wintage components inspected | Done | build log `E-3`, `themes/` copied from the local Wintage collection |
 | Baseline, roadmap, acceptance matrix | Done | `docs/ROADMAP.md`, this file |
 | Full structure created from a media-only repo | Done | `src/`, `tests/`, `scripts/`, `docs/`, solution |
-| Build, test, diagnose, continue to a finished product | Done | `dotnet build`, 123 passing tests, published app, UI smoke test |
+| Build, test, diagnose, continue to a finished product | Done | `dotnet build`, 127 passing tests, published app, UI smoke test |
 | Checkpoint for continuation | Done | SAIPEN log/state and this matrix |
 
 ## 2. Technology stack
@@ -248,6 +248,10 @@ section 16. All requirements in the captured body are covered below.
 | Outcomes drive cues | Verified | `Success` → done cue; `PartialSaved`/`Failed*` → error cue; `CancelledNoAudio` → info; stale session events ignored |
 | MP3 validation | Verified | 10.1 s recording → 162,095-byte MP3, `ffprobe` duration 10.104 s, stop-to-save 197 ms; failed encode keeps the WAV and does not overwrite |
 | Performance (operator machine) | Measured | startup 2.5–3.1 s warm / 5.7 s cold from a freshly extracted zip; hotkey start 73–201 ms; stop-to-save 93–131 ms for a 3 s WAV; tray idle 30 s used 0.063 s CPU (0.01 % of a 16-core host) and 170.3 MB working set; crash recovery rebuilt 4.49 s of audio 3.35 s after relaunch |
+| Queue overflow is truthful | Verified | `RecordingEngineTests.QueueOverflow_IsPartialSavedWithHistoryNote`: dropped bytes produce `PartialSaved`, a History note and the error path instead of `done.wav` |
+| Locked settings are never overwritten | Verified | `SettingsStoreTests.LockedExistingSettings_AreNotResetOrOverwritten`: a held `settings.json` loads as `Unreadable`, saving is refused and the original bytes survive |
+| Stale recovery markers do not hide parts | Verified | `RecoveryHardeningTests.StaleRecoveredMarkerWithoutOutput_RebuildsThePart`: missing output is rebuilt and the part is preserved |
+| Release notices are reproducible | Verified | `Publish.ps1` stages `THIRD-PARTY-NOTICES.md` from the repo and `LICENSE.txt`/`ThirdPartyNotices.txt` from the SDK |
 | Release package hygiene | Verified | `release/FastVRecorder-0.0.2-win-x64.zip` contains no `config/`, `Recordings/`, logs, settings, history or recovery artifacts; clean extraction recorded a 3.11 s `Success` WAV |
 
 ## Cross-cutting verification
@@ -255,11 +259,11 @@ section 16. All requirements in the captured body are covered below.
 | Item | Evidence |
 |---|---|
 | Solution builds in Release | `dotnet build FastVRecorder.sln -c Release` — success |
-| Automated tests | 87 core + 36 integration = **123 passed**, 0 failed |
+| Automated tests | 89 core + 38 integration = **127 passed**, 0 failed |
 | Portable publish | `scripts/Publish.ps1` → `dist/FastVRecorder` with self-contained `FastVRecorder.exe` |
 | UI smoke | live windows captured: Recorder, History, Hotkeys, Settings (all sections), Golden Default, Vintage Dark, English, Russian, System Default microphone, 35 % notification volume |
 | UI languages | 33 language packs (`LanguageTests`), native-name selector, Arabic RTL, portable overrides; 31 are machine-translated with English fallback |
-| Version | 0.0.2 (`Directory.Build.props`, UI footer, CHANGELOG) |
+| Version | 0.0.3 (`Directory.Build.props`, UI footer, CHANGELOG) |
 | Real hardware capture | The published build recorded real multi-second WAV files from the ATR2100x-USB endpoint (48 kHz mono 16-bit, verified headers); after the queue fix a live recording contained peak 13925 / RMS 1537, not silence. |
 | Notification output | `Notification 'start' -> WASAPI output 'Realtek Digital Output'` logged from the Preview button with the selector set; WaveOut fallback tested. |
 | Manual folder entry | Editable field + Save/Enter/LostFocus; `RecordingFolderResolver` tests cover empty, relative, absolute and environment-variable paths. |

@@ -2,6 +2,33 @@
 
 All notable changes to FastVRecorder are recorded here.
 
+## 0.0.3 — 2026-11-26
+
+Review follow-up for trusted recordings.
+
+### Fixed
+- Queue overflow is no longer reported as success. Dropped audio bytes force
+  `PartialSaved`, persist the dropped-byte note in History, show a warning and play the error cue
+  instead of `done.wav`.
+- An existing `settings.json` that cannot be read (for example a transient antivirus/backup lock)
+  is no longer treated as corruption. The app keeps defaults in memory, refuses to overwrite the
+  file, and tells the user to restart after fixing access; hotkeys and settings cannot be silently
+  replaced.
+- MP3 finalization wraps post-encode I/O in the engine error path, so an exception cannot strand
+  the state machine in `Finalizing` without a completion event.
+- A recovery marker whose output file is missing no longer hides the `.part`; recovery rebuilds
+  the verified `_RECOVERED.wav`.
+- Assets installed before manifests existed are adopted into the manifest only when byte-identical
+  to the shipped file, so later updates replace them while user-modified themes, languages and cues
+  remain protected.
+- `Publish.ps1` now stages `THIRD-PARTY-NOTICES.md`, `LICENSE.txt` and `ThirdPartyNotices.txt`
+  from the SDK, making the release package reproducible instead of relying on a manual step.
+
+### Tests
+- 127 xUnit tests (89 Core + 38 Integration), including queue-overflow outcome, locked settings
+  preservation and stale recovery markers.
+- Publish-safety suite covers 45 assertions, including adoption of pre-manifest assets.
+
 ## 0.0.2 — 2026-11-26
 
 Data-safety and reliability hardening.

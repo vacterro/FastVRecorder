@@ -223,7 +223,15 @@ function Install-PortablePackage {
                 $oldHash = $oldManifest[$relative]
             }
             $currentHash = Get-FileSha256 $destination
-            if ($null -eq $oldHash -or -not $currentHash.Equals($oldHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+            if ($null -eq $oldHash) {
+                # A file installed before manifests existed. Adopt it only when it is byte-identical
+                # to the shipped asset; otherwise it is user-modified and must be preserved.
+                $stagingHash = Get-FileSha256 $file.FullName
+                if (-not $currentHash.Equals($stagingHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    continue
+                }
+            }
+            elseif (-not $currentHash.Equals($oldHash, [System.StringComparison]::OrdinalIgnoreCase)) {
                 continue
             }
         }

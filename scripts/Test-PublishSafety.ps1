@@ -66,6 +66,7 @@ try {
     Write-TextFile (Join-Path $target 'unknown-user.bin') 'unknown-user-file'
     Write-TextFile (Join-Path $target 'themes\custom-user.json') '{"slug":"custom-user"}'
     Write-TextFile (Join-Path $target 'media\custom-user.wav') 'RIFF-custom-cue'
+    Write-TextFile (Join-Path $target 'media\old-default.wav') 'RIFF-default-v1'
     Write-TextFile (Join-Path $target 'languages\de.json') '{"strings":{"Common.Open":"Benutzerdefiniert"}}'
     Write-TextFile (Join-Path $target 'FastVRecorder.exe') 'old-exe'
     Write-TextFile (Join-Path $target 'old.dll') 'old-obsolete'
@@ -116,6 +117,7 @@ try {
     Write-TextFile (Join-Path $staging 'README.md') 'new-readme'
     Write-TextFile (Join-Path $staging 'VERSION') '0.0.2'
     Write-TextFile (Join-Path $staging 'media\start.wav') 'RIFF-new-start'
+    Write-TextFile (Join-Path $staging 'media\old-default.wav') 'RIFF-default-v1'
     Write-TextFile (Join-Path $staging 'themes\goldendefault.json') '{"slug":"goldendefault"}'
     Write-TextFile (Join-Path $staging 'themes\custom-user.json') '{"slug":"overwritten-by-default"}'
     Write-TextFile (Join-Path $staging 'languages\en.json') '{"strings":{"Common.Open":"Open"}}'
@@ -136,12 +138,21 @@ try {
     Assert-True ((Get-Content -LiteralPath (Join-Path $target 'languages\de.json') -Raw) -match 'Benutzerdefiniert') 'user language override not overwritten'
     Assert-True ((Get-Content -LiteralPath (Join-Path $sentinel 'sentinel.txt') -Raw) -match 'do-not-touch') 'junction target untouched'
     Assert-True (Test-Path -LiteralPath (Join-Path $target 'publish-manifest.json')) 'owned artifact manifest written'
+    $writtenManifest = Get-Content -Raw -LiteralPath (Join-Path $target 'publish-manifest.json') | ConvertFrom-Json
+    $manifestKeys = @($writtenManifest.files.PSObject.Properties.Name)
+    Assert-True ($manifestKeys -contains 'media\old-default.wav') 'identical unowned asset adopted into manifest'
 
     # second publish is repeatable and still preserves user data
     Install-PortablePackage -Staging $staging -Target $target -RepoRoot $repo | Out-Null
     foreach ($relative in $protected) {
         Assert-True ($before[$relative] -eq (Hash-Of (Join-Path $target $relative))) "second publish preserves: $relative"
     }
+
+    # a now-owned asset is updated by the next package; unowned modified assets still survive
+    Write-TextFile (Join-Path $staging 'media\old-default.wav') 'RIFF-default-v2'
+    Install-PortablePackage -Staging $staging -Target $target -RepoRoot $repo | Out-Null
+    Assert-True ((Get-Content -LiteralPath (Join-Path $target 'media\old-default.wav') -Raw) -match 'RIFF-default-v2') 'adopted owned asset updated'
+    Assert-True ((Get-Content -LiteralPath (Join-Path $target 'media\custom-user.wav') -Raw) -match 'RIFF-custom-cue') 'unowned user cue still preserved'
 
     # ---- safe target policy ----------------------------------------------------------
     Assert-Throws { Assert-SafeTarget -Target $repo -RepoRoot $repo } 'repository root target refused'

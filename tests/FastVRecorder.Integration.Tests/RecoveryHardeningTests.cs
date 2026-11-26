@@ -59,6 +59,25 @@ public sealed class RecoveryHardeningTests : TempDirectoryTest
     }
 
     [Fact]
+    public void StaleRecoveredMarkerWithoutOutput_RebuildsThePart()
+    {
+        var harness = CreateHarness();
+        var part = CreatePartial(harness.Folder, "stale-marker", 4800, out _);
+        var basePath = part[..^FileNamer.PartSuffix.Length];
+        var output = Path.Combine(harness.Folder, "stale-marker_RECOVERED.wav");
+        File.WriteAllText(basePath + ".recovered",
+            JsonSerializer.Serialize(new { recoveredPath = output, recoveredAtUtc = DateTime.UtcNow }));
+
+        var service = new RecoveryService(harness.Paths, harness.Journal, harness.History, NullLog.Instance, () => harness.Settings);
+        var report = service.RecoverAll();
+
+        Assert.Single(report.Recovered);
+        Assert.True(File.Exists(output));
+        Assert.True(File.Exists(part));
+        Assert.Contains(harness.History.Snapshot(), entry => entry.Recovered);
+    }
+
+    [Fact]
     public void RecoveryNeverDeletesAZeroByteFileReferencedByMetadata()
     {
         var harness = CreateHarness();

@@ -101,16 +101,8 @@ public sealed class RecoveryService
                 {
                     report.Recovered.Add(recovered);
                 }
-                else
-                {
-                    var basePath = part.EndsWith(FileNamer.PartSuffix, StringComparison.OrdinalIgnoreCase)
-                        ? part[..^FileNamer.PartSuffix.Length]
-                        : part;
-                    if (File.Exists(basePath + ".recovered"))
-                    {
-                        _journal.Remove(part);
-                    }
-                }
+                // RecoverOne removes the journal entry only when a referenced recovered output
+                // exists; a stale marker must not hide an unrecovered part.
             }
             catch (Exception ex)
             {
@@ -193,9 +185,15 @@ public sealed class RecoveryService
         var metadata = TryReadMetadata(metaPath);
         if (File.Exists(markerPath))
         {
-            _log.Debug("Partial already recovered: " + partPath);
-            _journal.Remove(partPath);
-            return null;
+            var markerOutput = TryReadMarkerPath(markerPath);
+            if (markerOutput is not null && File.Exists(markerOutput))
+            {
+                _log.Debug("Partial already recovered: " + partPath);
+                _journal.Remove(partPath);
+                return null;
+            }
+
+            _log.Warn("Recovery marker has no output; rebuilding the recovered WAV: " + partPath);
         }
 
         if (metadata?.RecoveredAtUtc is not null && metadata.RecoveredPath is not null && File.Exists(metadata.RecoveredPath))
@@ -438,6 +436,24 @@ public sealed class RecoveryService
         {
             error = ex.Message;
             return false;
+        }
+    }
+
+    private static string? TryReadMarkerPath(string path)
+    {
+        var text = AtomicFile.TryReadAllText(path);
+        if (text is null) return null;
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.TryGetProperty("recoveredPath", out var value) &&
+                   value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 

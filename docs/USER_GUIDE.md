@@ -1,4 +1,4 @@
-# FastVRecorder 0.0.2 — User and technical guide
+# FastVRecorder 0.0.3 — User and technical guide
 
 [Back to project overview](../README.md)
 
@@ -183,15 +183,15 @@ Startup-folder shortcut cannot be created by *Start with Windows*.
 
 ## Tests
 
-- `FastVRecorder.Core.Tests` (87 tests): naming/reservation, WAV header/writer/verifier, device
+- `FastVRecorder.Core.Tests` (89 tests): naming/reservation, WAV header/writer/verifier, device
   format conversion and resampling, settings atomicity/backup/corruption/migration, hotkey parsing
   and validation, theme contract, history index, journal.
-- `FastVRecorder.Integration.Tests` (36 tests): full engine start/stop with a deterministic fake
+- `FastVRecorder.Integration.Tests` (38 tests): full engine start/stop with a deterministic fake
   capture device, concurrent start/stop, pause/resume, missing microphone, unavailable folder,
   MP3 when Media Foundation exists, crash recovery from `.part` with and without metadata,
   idempotent recovery, journal-driven discovery, damaged-part handling, cue player failure modes.
 
-Run `scripts\Test.ps1` (123 tests).
+Run `scripts\Test.ps1` (127 tests).
 
 ## Defaults
 

@@ -146,6 +146,11 @@ public partial class App : Application
         _viewModel.ShowHideRequested += () => _window.ToggleVisibility();
         _window.Show();
         _viewModel.Initialize();
+        if (_store.LoadStatus is SettingsLoadStatus.Unreadable or SettingsLoadStatus.ResetAfterCorruption
+            or SettingsLoadStatus.RecoveredFromBackup or SettingsLoadStatus.PartiallyRecovered)
+        {
+            _viewModel.ShowWarning(_store.LoadDetail ?? "Settings could not be loaded cleanly.");
+        }
 
         var pageArgument = args.FirstOrDefault(a => a.StartsWith("--page=", StringComparison.OrdinalIgnoreCase));
         if (pageArgument is not null && Enum.TryParse<UiPage>(pageArgument[7..], ignoreCase: true, out var requestedPage))

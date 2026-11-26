@@ -57,6 +57,9 @@ public sealed class RecordingEngine : IDisposable
     private bool _pendingWriterFinalization;
     private TimeSpan _writerJoinTimeout = TimeSpan.FromSeconds(25);
     internal Action? WriterLoopHook;
+
+    /// <summary>Test seam: shrink the queue so an overflow is deterministic.</summary>
+    internal int? QueueCapacityBytesOverride;
     private int _levelScaled;
     private readonly List<SegmentInfo> _segments = new();
     private readonly List<string> _completedFiles = new();
@@ -298,7 +301,7 @@ public sealed class RecordingEngine : IDisposable
                 _log.Info($"Capture device: {_source.DeviceName ?? "(unknown)"} / {_sourceFormat}");
 
                 _converter = new SampleConverter(_sourceFormat, _targetFormat);
-                _queue = new BoundedAudioQueue(Math.Max(
+                _queue = new BoundedAudioQueue(QueueCapacityBytesOverride ?? Math.Max(
                     _sourceFormat.BlockAlign * _sourceFormat.SampleRate * QueueSeconds,
                     1 << 20));
                 _source.DataAvailable += OnDataAvailable;
@@ -554,7 +557,17 @@ public sealed class RecordingEngine : IDisposable
         if (_outputFormat == OutputFormat.Mp3 && _segments.Count > 0)
         {
             Transition(RecordingState.Finalizing);
-            encodeError = EncodeSegments();
+            try
+            {
+                encodeError = EncodeSegments();
+            }
+            catch (Exception ex)
+            {
+                encodeError = "MP3 finalization failed: " + ex.Message;
+                _incomplete = true;
+                _incompleteReason ??= encodeError;
+                _log.Error("MP3 finalization failed after the recording stopped", ex);
+            }
         }
 
         var dropped = _queue?.DroppedBytes ?? 0;
@@ -572,7 +585,7 @@ public sealed class RecordingEngine : IDisposable
         }
 
         var files = _completedFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var outcome = DetermineOutcome(failure, finalizeError, encodeError, files.Count > 0);
+        var outcome = DetermineOutcome(failure, finalizeError, encodeError, _incomplete, files.Count > 0);
         if (files.Count > 0)
         {
             long size = 0;
@@ -626,6 +639,10 @@ public sealed class RecordingEngine : IDisposable
             {
                 LastError = $"Finalizing the recording failed: {finalizeError}";
             }
+            else if (_incomplete)
+            {
+                LastError = _incompleteReason ?? "The recording is incomplete.";
+            }
             else
             {
                 LastError = reason ?? "Recording stopped after an error.";
@@ -643,11 +660,16 @@ public sealed class RecordingEngine : IDisposable
         ResetSession();
     }
 
-    private static RecordingOutcome DetermineOutcome(bool failure, string? finalizeError, string? encodeError, bool hasFiles)
+    private static RecordingOutcome DetermineOutcome(
+        bool failure,
+        string? finalizeError,
+        string? encodeError,
+        bool incomplete,
+        bool hasFiles)
     {
         if (hasFiles)
         {
-            return failure || finalizeError is not null || encodeError is not null
+            return failure || finalizeError is not null || encodeError is not null || incomplete
                 ? RecordingOutcome.PartialSaved
                 : RecordingOutcome.Success;
         }

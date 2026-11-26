@@ -484,7 +484,7 @@ public sealed class MainViewModel : ObservableObject
         }
         else
         {
-            Settings.StorageWarning = _loc["Msg.SettingsReadOnly"];
+            Settings.StorageWarning = _store.CanSave ? _loc["Msg.SettingsReadOnly"] : _store.LastSaveError ?? _loc["Msg.SettingsReadOnly"];
             ShowBanner(Settings.StorageWarning, "warning");
         }
     }

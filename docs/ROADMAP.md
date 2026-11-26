@@ -1,6 +1,6 @@
 # Roadmap
 
-0.0.2 is functionally complete for the captured handoff. Everything below is deliberately
+0.0.3 is functionally complete for the captured handoff. Everything below is deliberately
 deferred, not accidentally missing.
 
 ## Candidate next steps
