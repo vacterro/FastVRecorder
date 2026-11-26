@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "kind": "saipen-suite-record",
+  "command": [
+    "dotnet",
+    "test",
+    "FastVRecorder.sln",
+    "-c",
+    "Release",
+    "--nologo"
+  ],
+  "command_sha256": "38938d6bee75da85b0874a9cdca43756e5a6d84b526b91067511cc103695b70a",
+  "status": "PASS",
+  "exit_code": 0,
+  "totals": null,
+  "duration_s": 16.3,
+  "timeout_s": 3600,
+  "subject_before": "git:ad577d31a3f017a4547260b82aa4882e4cca26c8e78978736daec58024c7a2a9",
+  "subject": "git:ad577d31a3f017a4547260b82aa4882e4cca26c8e78978736daec58024c7a2a9",
+  "stdout_tail": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  FastVRecorder.Core -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Core\\bin\\Release\\net10.0\\FastVRecorder.Core.dll\n  FastVRecorder.Infrastructure -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\src\\FastVRecorder.Infrastructure\\bin\\Release\\net10.0-windows\\FastVRecorder.Infrastructure.dll\n  FastVRecorder.Core.Tests -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Core.Tests\\bin\\Release\\net10.0\\FastVRecorder.Core.Tests.dll\nTest run for V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Core.Tests\\bin\\Release\\net10.0\\FastVRecorder.Core.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    79, Skipped:     0, Total:    79, Duration: 303 ms - FastVRecorder.Core.Tests.dll (net10.0)\n  FastVRecorder.Integration.Tests -> V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Integration.Tests\\bin\\Release\\net10.0-windows\\FastVRecorder.Integration.Tests.dll\nTest run for V:\\___VAC\\__K\\__CODE\\_PY\\_FastVRecorder\\tests\\FastVRecorder.Integration.Tests\\bin\\Release\\net10.0-windows\\FastVRecorder.Integration.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    24, Skipped:     0, Total:    24, Duration: 3 s - FastVRecorder.Integration.Tests.dll (net10.0)\n",
+  "stderr_tail": "",
+  "tree_changed_during_run": false,
+  "finished_utc": "2026-11-26T05:55:56Z",
+  "verdict": "PASS",
+  "problems": []
+}

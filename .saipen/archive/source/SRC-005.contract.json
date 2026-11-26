@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-005:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "add a default global hotkey to open and play the last recording"
+    }
+  },
+  "derived_at": "2026-11-26T05:56:08Z",
+  "derived_from": "SRC-005",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "7dcd144ad9b54f2febe3ff13afd3e287af6f7b21b918051a4f01cf4e1b553ad5"
+}

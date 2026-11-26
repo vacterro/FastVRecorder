@@ -1,0 +1,46 @@
+{
+  "op_id": "checkpoint-1cfaea469d914f9db3ca6061a167435e",
+  "operation": "checkpoint",
+  "created_at": "2026-11-26T05:55:38Z",
+  "agent": "saipen",
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "semantic_payload_hash": "221c619177599f4b",
+  "preconditions": {
+    ".saipen/STATE.md": "3d23005d580b0ea4",
+    ".saipen/BOARD.md": "a395181abb373cfd",
+    ".saipen/LOG.md": "9af873ddcf6b506d"
+  },
+  "read_preconditions": {
+    ".saipen/logs": "tree-missing-v1"
+  },
+  "verification_policy": "core_fast",
+  "status": "COMMITTED",
+  "progress_index": 3,
+  "targets": [
+    {
+      "path": ".saipen/LOG.md",
+      "role": "log",
+      "action": "write",
+      "before_hash": "9af873ddcf6b506d",
+      "after_hash": "7682cb32e0222cdf",
+      "applied": true
+    },
+    {
+      "path": ".saipen/BOARD.md",
+      "role": "board",
+      "action": "write",
+      "before_hash": "a395181abb373cfd",
+      "after_hash": "21cf4699ac440ffe",
+      "applied": true
+    },
+    {
+      "path": ".saipen/STATE.md",
+      "role": "state",
+      "action": "write",
+      "before_hash": "3d23005d580b0ea4",
+      "after_hash": "39a8ad22012fad7e",
+      "applied": true
+    }
+  ]
+}

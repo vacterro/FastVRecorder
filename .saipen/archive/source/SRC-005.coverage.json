@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-005:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-7 closed with verification evidence in LOG: verify -> PASS [target: T-7] conf: high -- dotnet test 103/103 PASS; live Ctrl+Alt+L registered with Toggle Alt+0, log opened last WAV in default player (MPC-HC window), migration test",
+      "text": "add a default global hotkey to open and play the last recording",
+      "verification": "the Work this request created reached its own verification gate; see the T-7 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-7"
+    }
+  },
+  "schema_version": 1
+}
