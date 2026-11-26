@@ -54,8 +54,19 @@ public partial class MainWindow : Window
 
     public void ToggleVisibility()
     {
-        if (IsVisible) HideToTray();
-        else ShowFromTray();
+        if (!IsVisible || WindowState == WindowState.Minimized)
+        {
+            ShowFromTray();
+        }
+        else if (IsActive)
+        {
+            HideToTray();
+        }
+        else
+        {
+            Activate();
+            _vm.RefreshTrayMenu();
+        }
     }
 
     private void LoadIcon()

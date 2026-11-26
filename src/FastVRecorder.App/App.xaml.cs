@@ -142,6 +142,7 @@ public partial class App : Application
         _window = new MainWindow(_viewModel, _settings, _paths, _log);
         MainWindow = _window;
         _viewModel.IsWindowVisible = () => _window.IsVisible;
+        _viewModel.ShowHideRequested += () => _window.ToggleVisibility();
         _window.Show();
         _viewModel.Initialize();
 

@@ -41,6 +41,9 @@ Initial autonomous build.
 - Build, test, publish, and clean scripts; README, architecture, acceptance matrix, roadmap.
 
 ### Fixed
+- Global **Show / hide window** shortcut did nothing: the view-model event was never
+  connected to the window. Wired it, and an unfocused visible window is now brought forward
+  instead of being hidden.
 - Silent recordings: `BoundedAudioQueue` wrote at the read index instead of a separate write index,
   corrupting queued audio under load. A dedicated write cursor and regression tests fixed the
   end-to-end signal path; a live microphone recording now contains non-zero samples.

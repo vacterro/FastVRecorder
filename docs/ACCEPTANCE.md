@@ -140,6 +140,7 @@ section 16. All requirements in the captured body are covered below.
 | Reject reserved combos, accidental recording while editing, duplicates, double local/global handling, losing the old working hotkey | Done | validator + transactional `Apply` + `Suspend` release; tested rules |
 | Clear conflict message | Done | Win32 error surfaced in the Keys page/banner |
 | Transactional change | Done | previous set restored on failure |
+| Global Show/Hide action | Done (manual) | `Shift+Alt+0` registered and toggled the window hide/show; the missing event wiring was fixed and regression-verified live |
 
 ## 9. Sound notifications
 
