@@ -1,0 +1,14 @@
+{
+  "clauses": {
+    "SRC-007:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "text": "ensure FastVRecorder persists settings and hotkey assignments across restarts"
+    }
+  },
+  "derived_at": "2026-11-26T07:23:46Z",
+  "derived_from": "SRC-007",
+  "interpretation_revision": 1,
+  "schema_version": 1,
+  "source_sha256": "9d8bca21e265746a84b8c7e229412b26f490921a6f04d1abed2b46f35faaffdc"
+}

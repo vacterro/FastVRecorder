@@ -31,6 +31,7 @@
 ## TODO
 
 ## DONE
+- [x] T-9 [P2] ensure FastVRecorder persists settings and hotkey assignments across restarts | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-007 | owner: saipen | claim_time: 2026-11-26T07:23:45Z | closure_mode: own_patch | publication_state: pending
 - [x] T-8 [P2] harden FastVRecorder data safety, recovery, writer ownership and release per SAIHANDOFF-2 | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-006 | owner: saipen | claim_time: 2026-11-26T07:06:32Z | closure_mode: own_patch | publication_state: pending
 - [x] T-7 [P2] add a default global hotkey to open and play the last recording | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-005 | owner: saipen | claim_time: 2026-11-26T05:56:08Z | closure_mode: own_patch | publication_state: pending
 - [x] T-6 [P2] fix global Show window hotkey Shift+Alt+0 | verify: the requested change is present and demonstrated against the user own description of it | request_witness: model_supplied | source_receipts: SRC-004 | owner: saipen | claim_time: 2026-11-26T05:50:32Z | closure_mode: own_patch | publication_state: pending

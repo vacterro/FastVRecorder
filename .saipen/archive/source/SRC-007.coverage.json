@@ -1,0 +1,14 @@
+{
+  "requirements": {
+    "SRC-007:R001": {
+      "actionable": true,
+      "class": "requirement",
+      "disposition": "VERIFIED",
+      "evidence": "T-9 closed with verification evidence in LOG: verify -> PASS [target: T-9] conf: high -- declared suite PASS; Core 88/88 + Integration 36/36 = 124/124. Live: assigning Show/hide produced settings.json hotkeys ShowHideWindow=Alt+Shift+0; restart logged settings: Loaded and applied the binding; Publish -SkipTests kept settings.json SHA-256 ebfb82aa... unchanged. New round-trip test covers gestures, local scope and nested folder.",
+      "text": "ensure FastVRecorder persists settings and hotkey assignments across restarts",
+      "verification": "the Work this request created reached its own verification gate; see the T-9 VERIFY cycle in .saipen/LOG.md",
+      "work": "T-9"
+    }
+  },
+  "schema_version": 1
+}

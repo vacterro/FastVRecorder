@@ -14,3 +14,5 @@
 {"at": "2026-11-26T05:56:09Z", "event_id": "finish-d4fc8d81351f488fadaae8cdcaa2cf4c", "key": "T-7:finish-d4fc8d81351f488fadaae8cdcaa2cf4c", "schema": 1, "state": "done", "ticket": "T-7"}
 {"at": "2026-11-26T07:06:37Z", "event_id": "finish-8a70f07c1fcf439395be8e317766c599", "key": "T-8:finish-8a70f07c1fcf439395be8e317766c599", "schema": 1, "state": "pending", "ticket": "T-8"}
 {"at": "2026-11-26T07:06:37Z", "event_id": "finish-8a70f07c1fcf439395be8e317766c599", "key": "T-8:finish-8a70f07c1fcf439395be8e317766c599", "schema": 1, "state": "done", "ticket": "T-8"}
+{"at": "2026-11-26T07:23:47Z", "event_id": "finish-d6df68dc7baa49288349b1c01fd2f275", "key": "T-9:finish-d6df68dc7baa49288349b1c01fd2f275", "schema": 1, "state": "pending", "ticket": "T-9"}
+{"at": "2026-11-26T07:23:47Z", "event_id": "finish-d6df68dc7baa49288349b1c01fd2f275", "key": "T-9:finish-d6df68dc7baa49288349b1c01fd2f275", "schema": 1, "state": "done", "ticket": "T-9"}
