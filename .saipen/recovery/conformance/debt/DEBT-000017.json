@@ -1,0 +1,75 @@
+{
+  "board_sha256": "4719ad2f1e359a0f",
+  "bound_work": "T-15",
+  "bound_work_phase": "SCOUT",
+  "created_at": "2026-11-26T13:48:23Z",
+  "findings_digest": "750bf810a24a559bd7350b19d3e91f62bcd0a5b4389cbaf46b1399f734651f43",
+  "gate": "core",
+  "journal_op_id": "debt.snapshot-017e82b1eb30",
+  "log_fingerprint": "cbfbb4fa09d5c259",
+  "problem_count": 1,
+  "problems": [
+    {
+      "category": null,
+      "credential": false,
+      "detail": "core sweep [sweep-ticket-link] -- .saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2 PROTOCOL_VIOLATION RUN-1/IMP-001 produced ticket T-14 without recurrence: and weak_model: (META-IMPRO",
+      "detail_hash": "b1a871d46710be32",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "problem",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": ".saipen\\improve\\imp-vacterro-fastvrecorder-20261126-6\\SWEEP.md:2"
+    }
+  ],
+  "project_identity": "v:\\___vac\\__k\\__code\\_py\\_fastvrecorder",
+  "project_lineage": "lineage-259f15286ad243239aa52a2616060cea",
+  "reason": "pre-BUILD debt baseline for T-15",
+  "ruleset_fingerprint": "d193e3bbf3d9069988ef06b263a3162b7394d87db0b1103dc05fb515961a8d69",
+  "ruleset_version": 2,
+  "schema_version": 1,
+  "snapshot_id": "DEBT-000017",
+  "source_head": "334678e607af2757ce6016180c55e887817bcbcc",
+  "source_tree_fingerprint": "git-delta-v1:c66baf69a8306f3b95dfc7badb5f72b088f8de8408e933efadc4d149721a1195",
+  "state_sha256": "e18e41c832444707",
+  "validator_protocol_version": "1",
+  "warning_count": 3,
+  "warnings": [
+    {
+      "category": "no-conformance-record",
+      "credential": false,
+      "detail": "no LOG line records a conformance run in \u00a7 1.2's fixed form (`RUN: validate.py -> PASS` or `-> FAIL`), so \u00a7 1.10's `saipen status` has nothing to report under Conformance and a cold agent must either ",
+      "detail_hash": "0f511cf104b0873e",
+      "finding_key": "76b48f23558dce11",
+      "rule_id": "unclassified",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    },
+    {
+      "category": "log-soft-cap",
+      "credential": false,
+      "detail": ".saipen/LOG.md is <n> / <n>, past the <n> / <n> cap -- `saipen transition CLEAN` seals it into the next .saipen/logs/LOG-<NNN>.md (phases/clean.md step 4)",
+      "detail_hash": "dfb4bf66467774ab",
+      "finding_key": "64be00fb9de17a5d",
+      "rule_id": "log_soft_cap",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    },
+    {
+      "category": "changelog-unarchived",
+      "credential": false,
+      "detail": "CHANGELOG.md carries <n> while it states it keeps the most recent ~10 -- the overflow belongs in CHANGELOG_ARCHIVE.md, moved verbatim the way LOG segments are sealed, so the top of the file stays the part anyone actually reads",
+      "detail_hash": "434b52b44ae55366",
+      "finding_key": "a0424a3e4cacc44c",
+      "rule_id": "changelog_unarchived",
+      "severity": "warning",
+      "subject_id": null,
+      "subject_kind": "global",
+      "subject_ref": null
+    }
+  ]
+}

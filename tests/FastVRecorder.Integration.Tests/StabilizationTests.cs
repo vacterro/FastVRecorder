@@ -289,6 +289,23 @@ public sealed class StabilizationTests : TempDirectoryTest
     }
 
     [Fact]
+    public void PreExistingLeaseFileWithUserBytesSurvivesRecovery()
+    {
+        var harness = CreateHarness();
+        var part = CreatePartial(harness.Folder, "lease-user", 4800);
+        var leasePath = Path.Combine(harness.Folder, ".fastvrecorder-recovery.lock");
+        var userBytes = new byte[] { 0x55, 0x53, 0x45, 0x52 };
+        File.WriteAllBytes(leasePath, userBytes);
+
+        var service = new RecoveryService(harness.Paths, harness.Journal, harness.History, NullLog.Instance, () => harness.Settings);
+        var report = service.RecoverAll();
+
+        Assert.Single(report.Recovered);
+        Assert.True(File.Exists(leasePath));
+        Assert.Equal(userBytes, File.ReadAllBytes(leasePath));
+    }
+
+    [Fact]
     public void AnotherCoordinatorHoldingTheFolderLeaseBlocksRecovery()
     {
         var harness = CreateHarness();

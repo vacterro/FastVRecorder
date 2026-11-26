@@ -229,10 +229,11 @@ public sealed class RecoveryService
         try
         {
             var path = Path.Combine(directory, ".fastvrecorder-recovery.lock");
+            var existed = File.Exists(path);
             var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.None);
             try { File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-            return new FolderLease(stream, path);
+            return new FolderLease(stream, path, deleteOnDispose: !existed);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
@@ -245,11 +246,13 @@ public sealed class RecoveryService
     {
         private FileStream? _stream;
         private readonly string _path;
+        private readonly bool _deleteOnDispose;
 
-        public FolderLease(FileStream stream, string path)
+        public FolderLease(FileStream stream, string path, bool deleteOnDispose)
         {
             _stream = stream;
             _path = path;
+            _deleteOnDispose = deleteOnDispose;
         }
 
         public void Dispose()
@@ -257,6 +260,7 @@ public sealed class RecoveryService
             var stream = _stream;
             _stream = null;
             stream?.Dispose();
+            if (!_deleteOnDispose) return;
             try { File.Delete(_path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
